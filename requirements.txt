@@ -5,3 +5,5 @@ tensorflow
 pandas
 pyunpack
 patool
+beautifulsoup4
+numpy

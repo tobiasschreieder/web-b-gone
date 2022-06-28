@@ -3,7 +3,7 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.preprocessing import setup_swde_dataset
+from classification.preprocessing import restructure_swde
 from config import Config
 # from frontend import start_server
 from utils import setup_logger_handler
@@ -86,7 +86,8 @@ def main():
 
     log.info('do main stuff')
 
-    setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
+    # setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
+    restructure_swde()
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@
 Workspace for the group Web-B-Gone of the 'Big Data and Language Technologies' course SoSe22.
 
 ## Setup
-You need [Docker](https://www.docker.com/101-tutorial) to setup this project. If you are not familiar with Docker, 
+You can use [Docker](https://www.docker.com/101-tutorial) to setup this project. If you are not familiar with Docker, 
 please visit the linked tutorial.
 
 Clone this repository and create a docker image with the ``Dockerfile``. This image contains the entrypoint to the ``startup.py``. 
