@@ -3,7 +3,7 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.preprocessing import restructure_swde
+from classification.category_models import neural_net_model
 from config import Config
 # from frontend import start_server
 from utils import setup_logger_handler
@@ -33,7 +33,7 @@ def parse_args():
                         dest='out_dir', help='Path to output directory.')
 
     parser.add_argument("-w", "--working-dir", default=pathlib.Path('working'), type=pathlib.Path,
-                        dest='work_dir', help='Path to working directory. (Location of index/neural net models)')
+                        dest='work_dir', help='Path to working directory. (Location of networks)')
     parser.add_argument("-cfg", "--config", default=pathlib.Path('config.json'), type=pathlib.Path,
                         dest='config', help='Path to config.json file.')
 
@@ -87,7 +87,8 @@ def main():
     log.info('do main stuff')
 
     # setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
-    restructure_swde()
+    # restructure_swde()
+    neural_net_model.NeuralNetCategoryModel('test', 'v0').classification([])
 
 
 if __name__ == '__main__':

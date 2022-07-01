@@ -14,11 +14,12 @@ cfg = Config.get()
 log = logging.getLogger('swde_setup')
 
 
-def setup_swde_dataset(zip_path: Path):
+def setup_swde_dataset(zip_path: Path) -> None:
     """
-    TODO
-    :param zip_path:
-    :return:
+    Setup the SWDE dataset. That means extraction from zip file and relocation to data directory.
+
+    :param zip_path: Path of the downloaded SWDE zip file.
+    :return: None
     """
 
     def extract_and_delete(file_path: Path):
@@ -43,9 +44,10 @@ def setup_swde_dataset(zip_path: Path):
 
 def convert_category_name(cat_name: str) -> str:
     """
-    TODO
-    :param cat_name:
-    :return:
+    Convert file category names to human-readable category names.
+
+    :param cat_name: File name of the category.
+    :return: Human-readable category name.
     """
     mapping = {'auto': 'Auto',
                'book': 'Book',
@@ -82,11 +84,21 @@ def _calc_attribute_dict(truth_path: Path, site_name: str, attribute_name: str) 
     return temp_dict
 
 
-def restructure_swde(remove_old: bool = False):
+def restructure_swde(remove_old: bool = False) -> None:
     """
-    TODO
-    :param remove_old:
-    :return:
+    Restructures the SWDE dataset. Create a unique website_id from the url hash
+    and save the websites under these new ids. Deletes old SWDE dataset if remove_old is set to True.
+     New directory structure:
+        restruc_swde/
+        └── < Category file name >/
+            └── W< First two chars from url hash >/
+                └── W< Full 16 char url hash >/
+                    ├── groundtruth.json
+                    ├── website.htm
+                    └── website-url.txt
+
+    :param remove_old: Should the old SWDE dateset be removed.
+    :return: None
     """
     swde_page = cfg.data_dir.joinpath('swde/webpages')
     swde_truth = cfg.data_dir.joinpath('swde/groundtruth')

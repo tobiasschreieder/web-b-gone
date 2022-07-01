@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import random
+from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Union
 
@@ -11,9 +12,39 @@ cfg = Config.get()
 faulty_ids = []
 
 
+class Category(Enum):
+    AUTO = 'Auto'
+    BOOK = 'Book'
+    CAMERA = 'Camera'
+    JOB = 'Job'
+    MOVIE = 'Movie'
+    NBA_PLAYER = 'NBA Player'
+    RESTAURANT = 'Restaurant'
+    UNIVERSITY = 'University'
+
+    def get_attribute_names(self) -> List[str]:
+        """
+        TODO
+        :return:
+        """
+        att_name = {'Auto': ['model', 'price', 'engine', 'fuel_economy'],
+                    'Book': ['title', 'author', 'isbn_13', 'publisher', 'publication_date'],
+                    'Camera': ['model', 'price', 'manufacturer'],
+                    'Job:': ['title', 'company', 'location', 'date_posted'],
+                    'Movie': ['title', 'director', 'genre', 'mpaa_rating'],
+                    'NBA Player': ['name', 'team', 'height', 'weight'],
+                    'Restaurant': ['name', 'address', 'phone', 'cuisine'],
+                    'University': ['name', 'phone', 'website', 'type']}
+
+        if self.value in att_name.keys():
+            return att_name[self.value]
+
+        raise ValueError(f'{self.value} is not a valid category name. Maybe you forgot to add it in the mapping?')
+
+
 @dataclasses.dataclass
 class GroundTruth:
-    category_name: str
+    category_name: Category
     attributes: Dict[str, List[str]]
 
     @classmethod
@@ -30,35 +61,6 @@ class GroundTruth:
             category_name=truth_json['category'],
             attributes=truth_json,
         )
-
-    @staticmethod
-    def get_categories() -> List[str]:
-        """
-        TODO
-        :return:
-        """
-        return ['Auto', 'Book', 'Camera', 'Job', 'Movie', 'NBA Player', 'Restaurant', 'University']
-
-    @staticmethod
-    def get_attribute_names(category: str) -> List[str]:
-        """
-        TODO
-        :param category:
-        :return:
-        """
-        att_name = {'Auto': ['model', 'price', 'engine', 'fuel_economy'],
-                    'Book': ['title', 'author', 'isbn_13', 'publisher', 'publication_date'],
-                    'Camera': ['model', 'price', 'manufacturer'],
-                    'Job:': ['title', 'company', 'location', 'date_posted'],
-                    'Movie': ['title', 'director', 'genre', 'mpaa_rating'],
-                    'NBA Player': ['name', 'team', 'height', 'weight'],
-                    'Restaurant': ['name', 'address', 'phone', 'cuisine'],
-                    'University': ['name', 'phone', 'website', 'type']}
-
-        if category in att_name.keys():
-            return att_name[category]
-
-        raise ValueError(f'{category} is not a valid category name.')
 
 
 @dataclasses.dataclass
