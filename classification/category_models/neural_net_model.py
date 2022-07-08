@@ -10,8 +10,9 @@ class NeuralNetCategoryModel(BaseCategoryModel):
     network: CategoryNetwork
 
     def __init__(self, name: str, version: str):
-
+        super().__init__()
         self.network = CategoryNetwork.get(version)(name)
+        self.network.load()
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
         """

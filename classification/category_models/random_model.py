@@ -8,6 +8,7 @@ from ..preprocessing import Category
 class RandomCategoryModel(BaseCategoryModel):
 
     def __init__(self, seed: Any = None):
+        super().__init__()
         self.seed = seed
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
