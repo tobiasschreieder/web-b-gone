@@ -3,9 +3,8 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.category_models import neural_net_model
+from classification.preprocessing import compress_restruc_swde
 from config import Config
-from extraction import ExtractionNetwork
 # from frontend import start_server
 from utils import setup_logger_handler
 
@@ -89,9 +88,11 @@ def main():
 
     # setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
     # restructure_swde()
-    neural_net_model.NeuralNetCategoryModel('test', 'v0').classification([])
-    ext_net = ExtractionNetwork.get('AutoV0')('test_1')
-    ext_net.predict([])
+    compress_restruc_swde()
+    # extract_restruc_swde(pathlib.Path('H:/web-b-gone/data/Restruc_SWDE_Dataset.zip'))
+    # neural_net_model.NeuralNetCategoryModel('test', 'v0').classification([])
+    # ext_net = ExtractionNetwork.get('AutoV0')('test_1')
+    # ext_net.predict([])
 
 
 if __name__ == '__main__':
