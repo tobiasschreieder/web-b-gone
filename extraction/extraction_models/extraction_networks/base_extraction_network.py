@@ -3,7 +3,7 @@ import importlib
 import logging
 from abc import ABC
 from pathlib import Path
-from typing import List, Type
+from typing import List, Type, Dict
 
 from keras.models import load_model
 from tensorflow import keras
@@ -26,7 +26,7 @@ class ExtractionNetwork(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def predict(self, web_ids: List[str]) -> List[List[str]]:
+    def predict(self, web_ids: List[str]) -> List[Dict[str, List[str]]]:
         pass
 
     @staticmethod

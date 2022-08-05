@@ -123,7 +123,7 @@ class Website:
                 web_id=web_id,
                 domain_name=domain,
                 url=url,
-                truth=GroundTruth.load(web_path.joinpath('groundtruth.json')),
+                truth=GroundTruth.load(web_id),
                 file_path=web_path.joinpath('website.htm'),
             )
 
@@ -151,10 +151,7 @@ class Website:
 
         if categories is not None:
             if isinstance(categories, Category):
-                if len(categories) > 0:
-                    categories = [categories]
-                else:
-                    categories = None
+                categories = [categories]
             elif isinstance(categories, list):
                 if len(categories) == 0:
                     categories = None

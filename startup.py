@@ -3,9 +3,10 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.preprocessing import compress_restruc_swde
+from classification.preprocessing import Website, Category
 from config import Config
 # from frontend import start_server
+from extraction import RandomExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -88,11 +89,17 @@ def main():
 
     # setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
     # restructure_swde()
-    compress_restruc_swde()
+    # compress_restruc_swde()
     # extract_restruc_swde(pathlib.Path('H:/web-b-gone/data/Restruc_SWDE_Dataset.zip'))
-    # neural_net_model.NeuralNetCategoryModel('test', 'v0').classification([])
-    # ext_net = ExtractionNetwork.get('AutoV0')('test_1')
-    # ext_net.predict([])
+    # neural_net_model.NeuralNetCategoryModel('test', 'v2').classification([])
+
+    web_ids = Website.get_website_ids(max_size=1, categories=Category.AUTO)
+
+    # ext_mod = NeuralNetExtractionModel(Category.AUTO, 'test_1', 'AutoV0')
+    # res1 = ext_mod.extract(web_ids)
+    ext_mod = RandomExtractionModel(Category.AUTO, 'test_1')
+    res2 = ext_mod.extract(web_ids)
+    pass
 
 
 if __name__ == '__main__':
