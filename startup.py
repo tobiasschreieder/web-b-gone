@@ -93,12 +93,20 @@ def main():
     # extract_restruc_swde(pathlib.Path('H:/web-b-gone/data/Restruc_SWDE_Dataset.zip'))
     # neural_net_model.NeuralNetCategoryModel('test', 'v2').classification([])
 
-    web_ids = Website.get_website_ids(max_size=1, categories=Category.AUTO)
+    # web_ids = Website.get_website_ids(max_size=1, categories=Category.AUTO)
 
     # ext_mod = NeuralNetExtractionModel(Category.AUTO, 'test_1', 'AutoV0')
     # res1 = ext_mod.extract(web_ids)
-    ext_mod = RandomExtractionModel(Category.AUTO, 'test_1')
-    res2 = ext_mod.extract(web_ids)
+    # ext_mod = RandomExtractionModel(Category.AUTO, 'test_1')
+    # res2 = ext_mod.extract(web_ids)
+
+    import evaluation.text_preprocessing as tp
+
+
+    text = " He&llo    Wor_ld $3  "
+    print(tp.lemmatize_text(text=text))
+    out = tp.preprocess_text_comparison(text=text)
+    print(out)
     pass
 
 
