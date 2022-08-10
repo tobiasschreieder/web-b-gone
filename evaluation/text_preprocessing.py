@@ -9,7 +9,7 @@ allowed_chars = ["$", ".", ",", "%"]  # List of chars which will not be removed
 
 def padding(text: str, q: int) -> str:
     """
-    Add padding characters to given text
+    Add padding characters to given text -> #
     :param text: string with given text
     :param q: length of q-grams
     :return: string with added padding characters
@@ -49,7 +49,7 @@ def remove_stop_chars(text: str) -> str:
     """
     punctuations = string.punctuation
 
-    # just use punctuation that are not included in allowed_chars
+    # just use punctuations that are not included in allowed_chars
     punctuations_used = "".join([i for i in punctuations if i not in allowed_chars])
 
     # remove punctuations from given text
