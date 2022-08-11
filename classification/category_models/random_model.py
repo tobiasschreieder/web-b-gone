@@ -20,4 +20,4 @@ class RandomCategoryModel(BaseCategoryModel):
         """
         if self.seed is not None:
             random.seed(self.seed)
-        return [random.choice(Category) for _ in web_ids]
+        return [random.choice([cat for cat in Category]) for _ in web_ids]
