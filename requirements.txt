@@ -8,3 +8,4 @@ patool
 beautifulsoup4
 numpy
 nltk
+sklearn

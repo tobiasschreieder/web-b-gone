@@ -5,7 +5,6 @@ def exact_match(text_1: str, text_2: str) -> float:
     :param text_2: String 2
     :return: Similarity between String 1 and String 2 as float
     """
-
     # At least one of the strings is empty
     if (len(text_1) == 0) or (len(text_2) == 0):
         return 0.0
@@ -26,7 +25,6 @@ def bag_similarity(text_1: str, text_2: str) -> float:
     :param text_2: String 2
     :return: Similarity between String 1 and String 2 as float
     """
-
     # At least one of the strings is empty -> return 0.0
     if (len(text_1) == 0) or (len(text_2) == 0):
         return 0.0
