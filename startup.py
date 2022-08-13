@@ -3,7 +3,10 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.preprocessing import Website, Category
+
+from evaluation import classification, extraction
+from classification.category_models import neural_net_model, RandomCategoryModel
+from classification.preprocessing import Website, Category, GroundTruth
 from config import Config
 # from frontend import start_server
 from extraction import RandomExtractionModel
@@ -93,20 +96,22 @@ def main():
     # extract_restruc_swde(pathlib.Path('H:/web-b-gone/data/Restruc_SWDE_Dataset.zip'))
     # neural_net_model.NeuralNetCategoryModel('test', 'v2').classification([])
 
-    # web_ids = Website.get_website_ids(max_size=1, categories=Category.AUTO)
+    # web_ids = Website.get_website_ids(max_size=1000, categories=Category.MOVIE)
 
     # ext_mod = NeuralNetExtractionModel(Category.AUTO, 'test_1', 'AutoV0')
     # res1 = ext_mod.extract(web_ids)
-    # ext_mod = RandomExtractionModel(Category.AUTO, 'test_1')
-    # res2 = ext_mod.extract(web_ids)
 
-    import evaluation.text_preprocessing as tp
+    results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
+                                                                    train_test_split=0.0,
+                                                                    max_size=1000)
+    log.info(results_classification)
 
+    results_extraction = extraction.evaluate_extraction(model_cls_extraction=RandomExtractionModel,
+                                                        category=Category.BOOK,
+                                                        train_test_split=0.0,
+                                                        max_size=1000)
+    log.info(results_extraction)
 
-    text = " He&llo    Wor_ld $3  "
-    print(tp.lemmatize_text(text=text))
-    out = tp.preprocess_text_comparison(text=text)
-    print(out)
     pass
 
 

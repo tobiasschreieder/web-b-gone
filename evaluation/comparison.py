@@ -1,56 +1,90 @@
-def exact_match(text_1: str, text_2: str) -> float:
-    """
-    Calculate exact match similarity between two given Strings (only 0.0 or 1.0)
-    :param text_1: String 1
-    :param text_2: String 2
-    :return: Similarity between String 1 and String 2 as float
-    """
-    # At least one of the strings is empty
-    if (len(text_1) == 0) or (len(text_2) == 0):
-        return 0.0
+from typing import List
+from collections import Counter
 
-    # Different strings
-    elif text_1 != text_2:
-        return 0.0
 
-    # Identical strings
+def exact_match(truth: List[List[str]], pred: List[List[str]]) -> float:
+    """
+    Method to calculate Exact-Match Score
+    :param truth: Ground-truth
+    :param pred: Predictions
+    :return: Exact-Match Score
+    """
+    total = 0
+
+    for i in range(0, len(truth)):
+        predicted_answer = pred[i]
+        if predicted_answer is not None and exact_match_single(truth=truth, predicted_answer=predicted_answer,
+                                                               iterator=i):
+            total += 1
+
+    return round(total / len(truth), 4)
+
+
+def exact_match_single(truth: List[List[str]], predicted_answer: List[str], iterator: int) -> bool:
+    """
+    Check if there is an Exact-Match for a given pair of predicted answer and ground-truth answers
+    :param truth: Ground-truth
+    :param predicted_answer: List with predicted_answers -> just first answer will be used
+    :param iterator: Integer which represents current iterator
+    :return: Boolean, True if Exact-Match and False if no Exact-Match
+    """
+    if len(predicted_answer) != 0:
+        predicted_answer = predicted_answer[0]
     else:
-        return 1.0
+        predicted_answer = ""
+
+    for answer in truth[iterator]:
+        if answer == predicted_answer:
+            return True
+
+    return False
 
 
-def bag_similarity(text_1: str, text_2: str) -> float:
+def f1(truth: List[List[str]], pred: List[List[str]]) -> float:
     """
-    Calculate bag distance similarity between two given Strings (0.0 - 1.0)
-    :param text_1: String 1
-    :param text_2: String 2
-    :return: Similarity between String 1 and String 2 as float
+    Method to calculate F1-Score
+    :param truth: Ground-truth
+    :param pred: Predictions
+    :return: F1-Score
     """
-    # At least one of the strings is empty -> return 0.0
-    if (len(text_1) == 0) or (len(text_2) == 0):
-        return 0.0
+    total = 0
 
-    # Exact match between both texts -> return 1.0
-    elif text_1 == text_2:
-        return 1.0
+    for i in range(0, len(truth)):
+        predicted_answer = pred[i]
+        if predicted_answer is not None:
+            total += f1_single(truth=truth, predicted_answer=predicted_answer, iterator=i)
 
-    len_text_1 = len(text_1)
-    len_text_2 = len(text_2)
+    return round(total / len(truth), 4)
 
-    list_1 = list(text_1)
-    list_2 = list(text_2)
 
-    for c in text_1:
-        if c in list_2:
-            list_2.remove(c)
+def f1_single(truth: List[List[str]], predicted_answer: List[str], iterator: int) -> bool:
+    """
+    Calculate F1-Score for a given pair of predicted answer and ground-truth answers
+    :param truth: Ground-truth
+    :param predicted_answer: List with predicted_answers -> just first answer will be used
+    :param iterator: Integer which represents current iterator
+    :return: F1-Score
+    """
+    f1 = 0
 
-    for c in text_2:
-        if c in list_1:
-            list_1.remove(c)
+    if len(predicted_answer) != 0:
+        predicted_answer = predicted_answer[0]
+    else:
+        predicted_answer = ""
 
-    # Calculate bag similarity
-    b = max(len(list_1), len(list_2))
-    bag_sim = 1.0 - float(b) / float(max(len_text_1, len_text_2))
+    predicted_answer_tokens = Counter(predicted_answer.split())
+    num_predicted_answer_tokens = sum(predicted_answer_tokens.values())
 
-    assert 0.0 <= bag_sim <= 1.0
+    for answer in truth[iterator]:
+        answer_tokens = Counter(answer.split())
+        num_answer_tokens = sum(answer_tokens.values())
+        num_same = sum((predicted_answer_tokens & answer_tokens).values())
 
-    return bag_sim
+        if num_same == 0:
+            continue
+
+        precision = 1.0 * num_same / num_predicted_answer_tokens
+        recall = 1.0 * num_same / num_answer_tokens
+        f1 = max(2 * precision * recall / (precision + recall), f1)
+
+    return f1
