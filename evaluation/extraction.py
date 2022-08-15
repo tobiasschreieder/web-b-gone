@@ -1,8 +1,8 @@
 from typing import List, Dict, Type
 
-from extraction.extraction_models import BaseExtractionModel, NeuralNetExtractionModel
 from classification.preprocessing import Category, GroundTruth, Website
 from evaluation import comparison, text_preprocessing
+from extraction.extraction_models import BaseExtractionModel
 
 
 def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
@@ -27,12 +27,8 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
 
     # Extraction
     model_extraction: BaseExtractionModel
-
-    if model_cls_extraction == NeuralNetExtractionModel:
-        model_extraction: NeuralNetExtractionModel = model_cls_extraction(category, **model_kwargs)
-        model_extraction.network.train(train_ids)
-    else:
-        model_extraction = model_cls_extraction(category, **model_kwargs)
+    model_extraction = model_cls_extraction(category, **model_kwargs)
+    model_extraction.train(train_ids)
 
     results_extraction = extraction_metrics(model_extraction.extract(web_ids=test_ids),
                                             [GroundTruth.load(web_id).attributes for web_id in test_ids])

@@ -3,9 +3,10 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.preprocessing import Category, Website
+from classification.preprocessing import Category
 from config import Config
 # from frontend import start_server
+from evaluation import extraction
 from extraction import StructuredTemplateExtractionModel
 from utils import setup_logger_handler
 
@@ -92,21 +93,20 @@ def main():
     #                                                                 max_size=1000)
     # log.info(results_classification)
     #
-    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=RandomExtractionModel,
-    #                                                     category=Category.BOOK,
-    #                                                     train_test_split=0.0,
-    #                                                     max_size=1000)
-    # log.info(results_extraction)
+    results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
+                                                        category=Category.NBA_PLAYER,
+                                                        train_test_split=0.10,
+                                                        max_size=100)
+    log.info(results_extraction)
 
-    web_ids = Website.get_website_ids(max_size=20, categories=Category.NBA_PLAYER)
+    # web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
+    #
+    # struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
+    # struc_temp_model.train(web_ids[0:5])
+    # result = struc_temp_model.extract(web_ids[5:10])
 
-    '''struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
-    struc_temp_model.train(web_ids[0:5])
-    result = struc_temp_model.extract(web_ids[5:10])'''
+    pass
 
-    ner_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
-    struc_temp_model.train(web_ids[0:5])
-    result = struc_temp_model.extract(web_ids[5:10])
 
 if __name__ == '__main__':
     parse_args()

@@ -16,12 +16,16 @@ class StructuredTemplate:
 
     def __init__(self):
         self.web_ids_trained_on = []
+        self.web_ids_faulty = []
         self.attributes = []
         self.positions = []
         self.text_info = []
 
+    def add_faulty_id(self, web_id: str):
+        self.web_ids_faulty.append(web_id)
+
     def get_web_ids(self) -> List[str]:
-        return self.web_ids_trained_on
+        return list({web_id for web_id in self.web_ids_trained_on if web_id not in self.web_ids_faulty})
 
     def add_attribute(self, attribute: str, position, text_info: List[int], web_id: str) -> None:
         self.attributes.append(attribute)
@@ -121,6 +125,10 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
             for key in attributes:
                 self.log.debug(f'Find best match for attribute {key}')
                 # TODO witch ground truth should be used, currently the first
+                if len(attributes[key]) == 0:
+                    template.add_faulty_id(web_id)
+                    continue
+
                 attributes[key] = tp.preprocess_text_html(attributes[key][0])
                 best_match = 0
                 best_position = None
@@ -139,6 +147,9 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
                         best_position = {'attribute': key,
                                          'position': mapping['position'],
                                          'text_info': text_info}
+                if best_match == 0:
+                    template.add_faulty_id(web_id)
+                    continue
 
                 template.add_attribute(attribute=best_position['attribute'],
                                        position=best_position['position'],
@@ -147,7 +158,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         # TODO: cluster templates
         self.template = template
 
-    def extract(self, web_ids: List[str], n_jobs: int = -1, **kwargs) -> List[Dict[str, List[str]]]:
+    def extract(self, web_ids: List[str], n_jobs: int = 1, **kwargs) -> List[Dict[str, List[str]]]:
         """
         Extract information from websites using the structured template approach.
 
@@ -160,6 +171,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
 
         def extract_web_id(web_id: str) -> Dict[str, List[str]]:
             website = Website.load(web_id)
+            self.log.debug(f'Extract for web_id {web_id}')
             with Path(website.file_path).open(encoding='utf-8') as htm_file:
                 soup = BeautifulSoup(htm_file, features="html.parser")
 
@@ -184,7 +196,11 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
 
                 candidates.append({'attribute': key,
                                    'candidates': candidates_filter(filter_category, text_position_mapping)})
-            return find_best_candidate(candidates, self.template)
+            best_cand = find_best_candidate(candidates, self.template)
+            res = {}
+            for att in best_cand:
+                res[att['attribute']] = [att['candidate']['text']]
+            return res
 
         if len(web_ids) > 20:
             with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
