@@ -3,12 +3,10 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.category_models import RandomCategoryModel
-from classification.preprocessing import Category
+from classification.preprocessing import Category, Website
 from config import Config
-from evaluation import classification, extraction
 # from frontend import start_server
-from extraction import RandomExtractionModel
+from extraction import StructuredTemplateExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -89,27 +87,22 @@ def main():
 
     log.info('do main stuff')
 
-    # setup_swde_dataset(pathlib.Path('H:/web-b-gone/data/SWDE_Dataset.zip'))
-    # restructure_swde()
-    # compress_restruc_swde()
-    # extract_restruc_swde(pathlib.Path('H:/web-b-gone/data/Restruc_SWDE_Dataset.zip'))
-    # neural_net_model.NeuralNetCategoryModel('test', 'v2').classification([])
+    # results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
+    #                                                                 train_test_split=0.0,
+    #                                                                 max_size=1000)
+    # log.info(results_classification)
+    #
+    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=RandomExtractionModel,
+    #                                                     category=Category.BOOK,
+    #                                                     train_test_split=0.0,
+    #                                                     max_size=1000)
+    # log.info(results_extraction)
 
-    # web_ids = Website.get_website_ids(max_size=1000, categories=Category.MOVIE)
+    web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
 
-    # ext_mod = NeuralNetExtractionModel(Category.AUTO, 'test_1', 'AutoV0')
-    # res1 = ext_mod.extract(web_ids)
-
-    results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
-                                                                    train_test_split=0.0,
-                                                                    max_size=1000)
-    log.info(results_classification)
-
-    results_extraction = extraction.evaluate_extraction(model_cls_extraction=RandomExtractionModel,
-                                                        category=Category.BOOK,
-                                                        train_test_split=0.0,
-                                                        max_size=1000)
-    log.info(results_extraction)
+    struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
+    struc_temp_model.learn_template(web_ids[0:5])
+    result = struc_temp_model.extract(web_ids[5:10])
 
     pass
 

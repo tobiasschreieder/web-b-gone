@@ -87,11 +87,10 @@ def preprocess_text_html(text: str) -> str:
     if not text:
         return ""
 
-    if isinstance(text, list):
-        " ".join(text)
+    if not isinstance(text, str):
+        text = " ".join(text)
 
     # rules for replacement
-    print(text)
     text = text.replace("&nbsp", " ")
 
     text = text.lower()

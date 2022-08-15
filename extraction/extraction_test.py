@@ -1,10 +1,11 @@
 import random
 from copy import copy
+from pathlib import Path
+
+from bs4 import BeautifulSoup
 
 import evaluation.text_preprocessing as tp
-from pathlib import Path
-from classification.preprocessing import Website, Category
-from bs4 import BeautifulSoup
+from classification.preprocessing import Website
 
 
 class Template:
@@ -228,11 +229,15 @@ def find_best_candidate(candidates, template):
                 while text_info[i] == 0:
                     correct_words = correct_words[1:]
                     i += 1
+                    if i >= len(text_info):
+                        break
                 # delete trailing words
                 i = len(text_info)
                 while text_info[i - 1] == 0:
                     correct_words = correct_words[:-1]
                     i -= 1
+                    if i < 0:
+                        break
                 candidate['text'] = correct_words
 
             candidates_sum.append({'attribute': attribute, 'candidate': candidate})
