@@ -13,6 +13,16 @@ class NeuralNetExtractionModel(BaseExtractionModel):
         super().__init__(category)
         self.network = ExtractionNetwork.get(version)(name)
 
+    def train(self, web_ids: List[str], **kwargs) -> None:
+        """
+        TODO
+        :param web_ids:
+        :param kwargs:
+        :return:
+        """
+        self.network.train(web_ids, **kwargs)
+        self.network.save()
+
     def extract(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
         """
         TODO
@@ -21,4 +31,4 @@ class NeuralNetExtractionModel(BaseExtractionModel):
         :return:
         """
         self.network.load()
-        return self.network.predict(web_ids)
+        return self.network.predict(web_ids, **kwargs)

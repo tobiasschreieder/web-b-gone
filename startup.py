@@ -101,7 +101,7 @@ def main():
     web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
 
     struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
-    struc_temp_model.learn_template(web_ids[0:5])
+    struc_temp_model.train(web_ids[0:5])
     result = struc_temp_model.extract(web_ids[5:10])
 
     pass

@@ -96,7 +96,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
     def __init__(self, category: Category):
         super().__init__(category)
 
-    def learn_template(self, web_ids: List[str]) -> None:
+    def train(self, web_ids: List[str], **kwargs) -> None:
         """
         Learn a structured template from the given website ids.
 
