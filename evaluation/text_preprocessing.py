@@ -84,3 +84,29 @@ def preprocess_text_comparison(text: str) -> str:
     text = lemmatize_text(text=text)
 
     return text
+
+
+def preprocess_text_html(text: str) -> str:
+    """
+    Method to preprocess text for html
+    :param text: string with given text
+    :return: string with given text
+    """
+    if not text:
+        return ""
+
+    if isinstance(text, list):
+        " ".join(text)
+
+    # rules for replacement
+    print(text)
+    text = text.replace("&nbsp", " ")
+
+    text = text.lower()
+    text = remove_stop_chars(text=text)
+
+
+    return text
+
+
+
