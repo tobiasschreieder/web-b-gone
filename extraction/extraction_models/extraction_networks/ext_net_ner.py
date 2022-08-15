@@ -17,7 +17,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
     def __init__(self, name: str, **kwargs):
         super().__init__(name=name, version='NER_v1', description='Try to extract information with NER')
-        self.nlp = spacy.load('de_core_news_md')
+        self.nlp = spacy.load('en_core_web_sm')
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
