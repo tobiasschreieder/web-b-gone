@@ -3,10 +3,11 @@ import logging
 import pathlib
 from typing import Any, Dict
 
+from classification.category_models.decision_tree_model import DecisionTreeC5CategoryModel
 from classification.preprocessing import Category
 from config import Config
 # from frontend import start_server
-from evaluation import extraction
+from evaluation import extraction, classification
 from extraction import StructuredTemplateExtractionModel, NeuralNetExtractionModel
 from utils import setup_logger_handler
 
@@ -88,10 +89,10 @@ def main():
 
     log.info('do main stuff')
 
-    # results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
-    #                                                                 train_test_split=0.0,
-    #                                                                 max_size=1000)
-    # log.info(results_classification)
+    results_classification = classification.evaluate_classification(model_cls_classification=DecisionTreeC5CategoryModel,
+                                                                    train_test_split=0.3,
+                                                                    max_size=1000)
+    log.info(results_classification)
     #
     # results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
     #                                                     category=Category.NBA_PLAYER,
