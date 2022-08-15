@@ -22,7 +22,7 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     """
     # Load and split data
     web_ids: List[str] = Website.get_website_ids(max_size=max_size, rdm_sample=True, seed='eval_class')
-    split_index = int(len(web_ids)*train_test_split)
+    split_index = int(len(web_ids) * train_test_split)
     train_ids = web_ids[:split_index]
     test_ids = web_ids[split_index:]
 
@@ -54,14 +54,15 @@ def format_data_classification(data: List[Category]) -> List[str]:
     return formatted_data
 
 
-def create_confusion_matrix(pred: List[str], truth: List[str]) -> np.ndarray:  # TODO: specify return
+def create_confusion_matrix(pred: List[str], truth: List[str]) -> np.ndarray:
     """
     Create Confusion-Matrix
     :param truth: List with names of predicted categories
     :param pred: List with names of ground truth categories
-    :return: Confusion-Matrixx as Array
+    :return: Confusion-Matrix as Array
     """
     conf = confusion_matrix(y_true=truth, y_pred=pred)
+
     return conf
 
 
