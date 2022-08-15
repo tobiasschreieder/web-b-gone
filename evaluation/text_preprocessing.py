@@ -1,8 +1,44 @@
 from typing import List, Dict
+from nltk import ngrams
 from nltk.stem import WordNetLemmatizer
 import string
 
-ALLOWED_CHARS = ["$", ".", ",", "%"]  # List of chars which will not be removed
+Q = 2  # Value length of q-grams for comparison function
+allowed_chars = ["$", ".", ",", "%"]  # List of chars which will not be removed
+
+
+def padding(text: str, q: int) -> str:
+    """
+    Add padding characters to given text -> #
+    :param text: string with given text
+    :param q: length of q-grams
+    :return: string with added padding characters
+    """
+    pad_chars = str()
+    i = 0
+
+    while i < q - 1:
+        pad_chars = pad_chars + "#"
+        i += 1
+    text = pad_chars + text + pad_chars
+
+    return text
+
+
+def create_grams(text: str, q: int, use_padding: bool) -> List:
+    """
+    Create q-grams from given text
+    :param text: string with given text
+    :param q: length of q-grams
+    :param use_padding: True if padding should be used, else: False
+    :return: List with created q-grams
+    """
+    if use_padding:
+        text = padding(text=text, q=Q)
+
+    q_grams = ["".join(k1) for k1 in list(ngrams(text, n=q))]
+
+    return q_grams
 
 
 def remove_stop_chars(text: str) -> str:
@@ -14,7 +50,7 @@ def remove_stop_chars(text: str) -> str:
     punctuations = string.punctuation
 
     # just use punctuations that are not included in allowed_chars
-    punctuations_used = "".join([i for i in punctuations if i not in ALLOWED_CHARS])
+    punctuations_used = "".join([i for i in punctuations if i not in allowed_chars])
 
     # remove punctuations from given text
     text = "".join([i for i in text if i not in punctuations_used])
@@ -48,30 +84,3 @@ def preprocess_text_comparison(text: str) -> str:
     text = lemmatize_text(text=text)
 
     return text
-
-
-def preprocess_list_comparison(texts: List[str]) -> List[str]:
-    """
-    Method to preprocess a list of texts for comparison
-    :param texts: List with texts as string
-    :return: List with preprocessed texts
-    """
-    preprocessed_texts = list()
-    for t in texts:
-        preprocessed_texts.append(preprocess_text_comparison(t))
-
-    return preprocessed_texts
-
-
-def preprocess_extraction_data_comparison(data: List[Dict[str, List[str]]]) -> List[Dict[str, List[str]]]:
-    """
-    Method to preprocess texts in ground-truth / results datastructure for comparison
-    :param data: given datastructure
-    :return: preprocessed datastructure
-    """
-    for w in range(0, len(data)):
-        for attribute, texts in data[w].items():
-            if attribute != "category":
-                data[w][attribute] = preprocess_list_comparison(texts=texts)
-
-    return data
