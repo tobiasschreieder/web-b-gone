@@ -1,4 +1,6 @@
 from typing import List, Dict, Type
+
+import numpy as np
 from sklearn.metrics import confusion_matrix, recall_score, precision_score, f1_score
 
 from classification.category_models import BaseCategoryModel, NeuralNetCategoryModel
@@ -52,7 +54,7 @@ def format_data_classification(data: List[Category]) -> List[str]:
     return formatted_data
 
 
-def create_confusion_matrix(pred: List[str], truth: List[str]):  # TODO: specify return
+def create_confusion_matrix(pred: List[str], truth: List[str]) -> np.ndarray:  # TODO: specify return
     """
     Create Confusion-Matrix
     :param truth: List with names of predicted categories
