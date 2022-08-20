@@ -55,6 +55,26 @@ class Category(Enum):
 
         raise ValueError(f'{self.value} is not a valid category name. Maybe you forgot to add it in the mapping?')
 
+    @staticmethod
+    def get_attr_type(attr_name: str) -> str:
+        numbers = ['isbn_13', 'height', 'weight']
+        text = ['model', 'engine', 'fuel_economy', 'title', 'mpaa_rating']
+        name = ['author', 'publisher', 'manufacturer', 'company',
+                'director', 'genre', 'name', 'team', 'cuisine', 'type']
+        date = ['publication_date', 'date_posted']
+        rest = ['price', 'location', 'address', 'phone', 'website']
+
+        if attr_name in numbers:
+            return 'number'
+        elif attr_name in text:
+            return 'text'
+        elif attr_name in name:
+            return 'name'
+        elif attr_name in date:
+            return 'date'
+        else:
+            return 'other'
+
 
 @dataclasses.dataclass
 class GroundTruth:
