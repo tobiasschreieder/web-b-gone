@@ -6,69 +6,74 @@ from nltk.stem.lancaster import LancasterStemmer
 import nltk
 import numpy as np
 
-
 from config import Config
 from data_storage import GroundTruth, Category
 
 cfg = Config.get()
 log = logging.getLogger('categorize_prepare')
-"""
-    Returns the corresponding list of groundtruth categories to the web id list input.
-"""
-training_data = [] #somehow get it -> prepare
 words = []
-classes = []
 documents = []
 ignore_words = ['?']
-stemmer = LancasterStemmer()
-# create our training data
-training = []
-output = []
-# create an empty array for our output
-output_empty = [0] * len(classes)
+categories = [Category.AUTO, Category.BOOK, Category.CAMERA, Category.JOB, Category.MOVIE, Category.NBA_PLAYER,
+              Category.RESTAURANT, Category.UNIVERSITY]
 
-# training set, bag of words for each sentence
-for doc in documents:
-    # initialize our bag of words
-    bag = []
-    # list of tokenized words for the pattern
-    pattern_words = doc[0]
-    # stem each word
-    pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
-    # create our bag of words array
-    for w in words:
-        bag.append(1) if w in pattern_words else bag.append(0)
+"""
+    Prepare text for usage in neural network.
+"""
 
-    training.append(bag)
-    # output is a '0' for each tag and '1' for current tag
-    output_row = list(output_empty)
-    output_row[classes.index(doc[1])] = 1
-    output.append(output_row)
 
-print("# words", len(words))
-print("# classes", len(classes))
-# loop through each sentence in our training data
-for pattern in training_data:
-    # tokenize each word in the sentence
-    w = nltk.word_tokenize(pattern['sentence'])
-    # add to our words list
-    words.extend(w)
-    # add to documents in our corpus
-    documents.append((w, pattern['class']))
-    # add to our classes list
-    if pattern['class'] not in classes:
-        classes.append(pattern['class'])
+def prepare_text_for_nn(self, training_data: List[str]):
+    self.words = []
+    self.documents = []
+    self.ignore_words = ['?']
+    stemmer = LancasterStemmer()
+    # create our training data
+    training = []
+    output = []
+    # create an empty array for our output
+    # loop through each sentence in our training data
+    for pattern in training_data:
+        # tokenize each word in the sentence
+        w = nltk.word_tokenize(pattern['text_all'])
+        # add to our words list
+        self.words.extend(w)
+        # add to documents in our corpus
+        documents.append((w, pattern['web_id']))
 
-# stem and lower each word and remove duplicates
-words = [stemmer.stem(w.lower()) for w in words if w not in ignore_words]
-words = list(set(words))
+    # stem and lower each word and remove duplicates
+    words = [stemmer.stem(w.lower()) for w in self.words if w not in ignore_words]
+    words = list(set(words))
 
-# remove duplicates
-classes = list(set(classes))
+    print(len(documents), "documents")
+    print(len(words), "unique stemmed words", words)
 
-print(len(documents), "documents")
-print(len(classes), "classes", classes)
-print(len(words), "unique stemmed words", words)
+    ##todo
+    # create a list of tokenized words for the pattern and also create a bag of words by using NLTK Lancaster Stemmer
+    stemmer = LancasterStemmer()
+    # create our training data
+    training = []
+    output = []
+    # create an empty array for our output
+    output_empty = [0] * 8
+    # training set, bag of words for each sentence
+    for doc in documents:
+        # initialize our bag of words
+        bag = []
+        # list of tokenized words for the pattern
+        pattern_words = doc[0]
+        # stem each word
+        pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
+        # create our bag of words array
+        for w in words:
+            bag.append(1) if w in pattern_words else bag.append(0)
+
+        training.append(bag)
+        # output is a '0' for each tag and '1' for current tag
+        output_row = list(output_empty)
+        output_row[categories.index(doc[1])] = 1
+        output.append(output_row)
+
+    print("# words", len(words))
 
 
 def sigmoid(x):
@@ -105,6 +110,8 @@ def bow(self, sentence, words, show_details=False):
     return (np.array(bag))
 
 
+#not used? maybe only explanation snippet?
+#no keras/tensorflow?
 def think(sentence, show_details=False):
     x = bow(sentence.lower(), words, show_details)
     if show_details:
@@ -120,14 +127,14 @@ def think(sentence, show_details=False):
 
 def train(X, y, hidden_neurons=10, alpha=1, epochs=50000, dropout=False, dropout_percent=0.5):
     print("Training with %s neurons, alpha:%s, dropout:%s %s" % (
-    hidden_neurons, str(alpha), dropout, dropout_percent if dropout else ''))
-    print("Input matrix: %sx%s    Output matrix: %sx%s" % (len(X), len(X[0]), 1, len(classes)))
+        hidden_neurons, str(alpha), dropout, dropout_percent if dropout else ''))
+    print("Input matrix: %sx%s    Output matrix: %sx%s" % (len(X), len(X[0]), 1, len(categories)))
     np.random.seed(1)
 
     last_mean_error = 1
     # randomly initialize our weights with mean 0
     synapse_0 = 2 * np.random.random((len(X[0]), hidden_neurons)) - 1
-    synapse_1 = 2 * np.random.random((hidden_neurons, len(classes))) - 1
+    synapse_1 = 2 * np.random.random((hidden_neurons, len(categories))) - 1
 
     prev_synapse_0_weight_update = np.zeros_like(synapse_0)
     prev_synapse_1_weight_update = np.zeros_like(synapse_1)
@@ -143,7 +150,7 @@ def train(X, y, hidden_neurons=10, alpha=1, epochs=50000, dropout=False, dropout
 
         if (dropout):
             layer_1 *= np.random.binomial([np.ones((len(X), hidden_neurons))], 1 - dropout_percent)[0] * (
-                        1.0 / (1 - dropout_percent))
+                    1.0 / (1 - dropout_percent))
 
         layer_2 = sigmoid(np.dot(layer_1, synapse_1))
 
@@ -191,13 +198,14 @@ def train(X, y, hidden_neurons=10, alpha=1, epochs=50000, dropout=False, dropout
     synapse = {'synapse0': synapse_0.tolist(), 'synapse1': synapse_1.tolist(),
                'datetime': now.strftime("%Y-%m-%d %H:%M"),
                'words': words,
-               'classes': classes
+               'classes': categories
                }
     synapse_file = "synapses.json"
 
     with open(folder_path + synapse_file, 'w') as outfile:
         json.dump(synapse, outfile, indent=4, sort_keys=True)
     print("saved synapses to:", synapse_file)
+
 
 def train_train():
     X = np.array(training)
@@ -209,6 +217,3 @@ def train_train():
 
     elapsed_time = time.time() - start_time
     print("processing time:", elapsed_time, "seconds")
-
-
-

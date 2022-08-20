@@ -34,13 +34,12 @@ class CategoryNetworkV1(BaseCategoryNetwork):
     def plot(self):
         tree.plot_tree(self.clf)
 
-    def export_plot_graphviz(self):
-        dot_data = tree.export_graphviz(self.clf, out_file=Config.output_dir + '')
-        graph = graphviz.Source(dot_data)
-        graph.render("iris")
+    ##   def export_plot_graphviz(self):
+    #       dot_data = tree.export_graphviz(self.clf, out_file=Config.output_dir + '')
+    #       graph = graphviz.Source(dot_data)
+    #       graph.render("iris")
 
     def print_tree_text(self):
         tree_text = export_text(self.clf, feature_names=['web_id', 'html', 'url', 'head', 'title', 'link',
                                                          'largest_content', 'domain_name', 'text_all'])
         print(tree_text)
-

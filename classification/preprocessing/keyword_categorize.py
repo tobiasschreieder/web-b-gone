@@ -1,6 +1,7 @@
 import logging
-from flashtext.keyword import KeywordProcessor
 
+import html2text as html2text
+from flashtext.keyword import KeywordProcessor
 
 from config import Config
 from data_storage import GroundTruth, Category
@@ -61,55 +62,75 @@ kp8 = KeywordProcessor()
 for word in cat_university_keywords:
     kp8.add_keyword(word)
 
-    def percentage1(dum0, dumx):
-        try:
-            ans = float(dumx) / float(dum0)
-            ans = ans * 100
-        except:
-            return 0
-        else:
-            return ans
 
-    def find_class(text_from_html: str) -> Category:
-        x = str(text_from_html)
-        y0 = len(kp0.extract_keywords(x))
-        y1 = len(kp1.extract_keywords(x))
-        y2 = len(kp2.extract_keywords(x))
-        y3 = len(kp3.extract_keywords(x))
-        y4 = len(kp4.extract_keywords(x))
-        y5 = len(kp5.extract_keywords(x))
-        y6 = len(kp6.extract_keywords(x))
-        y7 = len(kp7.extract_keywords(x))
-        y8 = len(kp8.extract_keywords(x))
-        Total_matches = y0
-        per1 = float(percentage1(y0, y1))
-        per2 = float(percentage1(y0, y2))
-        per3 = float(percentage1(y0, y3))
-        per4 = float(percentage1(y0, y4))
-        per5 = float(percentage1(y0, y5))
-        per6 = float(percentage1(y0, y6))
-        per7 = float(percentage1(y0, y7))
-        per8 = float(percentage1(y0, y8))
-        if y0 == 0:
-            category = Category.get("NONE")
-        else:
-            if per1 >= per2 and per1 >= per3 and per1 >= per4 and per1 >= per5 and per1 >= per6 and per1 >= per7 and per1 >= per8:
-                category = Category.AUTO
-            elif per2 >= per3 and per2 >= per1 and per2 >= per4 and per2 >= per5 and per2 >= per6 and per2 >= per7 and per2 >= per8:
-                category = Category.BOOK
-            elif per3 >= per1 and per3 >= per2 and per3 >= per4 and per3 >= per5 and per3 >= per6 and per3 >= per7 and per3 >= per8:
-                category = Category.CAMERA
-            elif per4 >= per1 and per4 >= per2 and per4 >= per3 and per4 >= per5 and per4 >= per6 and per4 >= per7 and per4 >= per8:
-                category = Category.JOB
-            elif per5 >= per1 and per5 >= per2 and per5 >= per3 and per5 >= per4 and per5 >= per6 and per5 >= per7 and per5 >= per8:
-                category = Category.MOVIE
-            elif per6 >= per1 and per6 >= per2 and per6 >= per3 and per6 >= per4 and per6 >= per5 and per6 >= per7 and per6 >= per8:
-                category = Category.NBA_PLAYER
-            elif per7 >= per1 and per7 >= per2 and per7 >= per3 and per7 >= per4 and per7 >= per5 and per7 >= per6 and per7 >= per8:
-                category = Category.RESTAURANT
-            elif per8 >= per1 and per8 >= per2 and per8 >= per3 and per8 >= per4 and per8 >= per5 and per8 >= per6 and per8 >= per7:
-                category = Category.UNIVERSITY
+def percentage1(dum0, dumx):
+    try:
+        ans = float(dumx) / float(dum0)
+        ans = ans * 100
+    except:
+        return 0
+    else:
+        return ans
 
-        return category
 
-    #maybe also give out percentage for category for neural net
+def find_class(text_from_html: str) -> (Category, float):
+    x = str(text_from_html)
+    y0 = len(kp0.extract_keywords(x))
+    y1 = len(kp1.extract_keywords(x))
+    y2 = len(kp2.extract_keywords(x))
+    y3 = len(kp3.extract_keywords(x))
+    y4 = len(kp4.extract_keywords(x))
+    y5 = len(kp5.extract_keywords(x))
+    y6 = len(kp6.extract_keywords(x))
+    y7 = len(kp7.extract_keywords(x))
+    y8 = len(kp8.extract_keywords(x))
+    Total_matches = y0
+    per1 = float(percentage1(y0, y1))
+    per2 = float(percentage1(y0, y2))
+    per3 = float(percentage1(y0, y3))
+    per4 = float(percentage1(y0, y4))
+    per5 = float(percentage1(y0, y5))
+    per6 = float(percentage1(y0, y6))
+    per7 = float(percentage1(y0, y7))
+    per8 = float(percentage1(y0, y8))
+    percentage = 0
+    category = Category.get("NONE")
+    if y0 == 0:
+        category = Category.get("NONE")
+    else:
+        if per1 >= per2 and per1 >= per3 and per1 >= per4 and per1 >= per5 and per1 >= per6 and per1 >= per7 \
+                and per1 >= per8:
+            category = Category.AUTO
+            percentage = per1
+        elif per2 >= per3 and per2 >= per1 and per2 >= per4 and per2 >= per5 and per2 >= per6 and per2 >= per7 \
+                and per2 >= per8:
+            category = Category.BOOK
+            percentage = per2
+        elif per3 >= per1 and per3 >= per2 and per3 >= per4 and per3 >= per5 and per3 >= per6 and per3 >= per7 \
+                and per3 >= per8:
+            category = Category.CAMERA
+            percentage = per3
+        elif per4 >= per1 and per4 >= per2 and per4 >= per3 and per4 >= per5 and per4 >= per6 and per4 >= per7 \
+                and per4 >= per8:
+            category = Category.JOB
+            percentage = per4
+        elif per5 >= per1 and per5 >= per2 and per5 >= per3 and per5 >= per4 and per5 >= per6 and per5 >= per7 \
+                and per5 >= per8:
+            category = Category.MOVIE
+            percentage = per5
+        elif per6 >= per1 and per6 >= per2 and per6 >= per3 and per6 >= per4 and per6 >= per5 and per6 >= per7 \
+                and per6 >= per8:
+            category = Category.NBA_PLAYER
+            percentage = per6
+        elif per7 >= per1 and per7 >= per2 and per7 >= per3 and per7 >= per4 and per7 >= per5 and per7 >= per6 \
+                and per7 >= per8:
+            category = Category.RESTAURANT
+            percentage = per7
+        elif per8 >= per1 and per8 >= per2 and per8 >= per3 and per8 >= per4 and per8 >= per5 and per8 >= per6 \
+                and per8 >= per7:
+            category = Category.UNIVERSITY
+            percentage = per8
+
+    return (category, percentage)
+
+# maybe also give out percentage for category for neural net
