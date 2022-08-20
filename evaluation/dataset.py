@@ -16,7 +16,11 @@ def exploratory_data_analysis(max_size: int = -1):
     solution_dict = average_solutions_ground_truth(ground_truth=ground_truth)
     missing_dict = average_missing_ground_truth(ground_truth=ground_truth)
 
-    # ToDo: further processing of the results
+    eda = [length_dict, token_dict, solution_dict, missing_dict]
+
+    create_eda_md_table(eda=eda)
+
+    # ToDo: further processing of the results deepcopy
 
 
 def get_dictionary(ground_truth: List[Dict[str, List[str]]]) -> Dict[str, Dict[str, float]]:
@@ -175,3 +179,33 @@ def average_missing_ground_truth(ground_truth: List[Dict[str, List[str]]]) -> Di
             missing_dict[category][attribute] = round(missing_dict[category][attribute] / length, 2)
 
     return missing_dict
+
+
+def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]]):
+    """
+    Create Markdown File with Table of EDA in /working
+    :param eda: List with all calculated exploratory data analysis results
+    """
+    text = list()
+    text.append("# Exploratory Data Analysis")
+    text.append("\n")
+
+    for category in eda[0]:
+        text.append("## " + "Category: " + category.upper() + "\n")
+        text.append("| Attribute | Average Length | Average Tokens | Average Solutions | Average Missing |")
+        text.append("|---|---|---|---|---|")
+
+        for attribute in eda[0][category]:
+            column = "| " + str(attribute) + " | "
+            column += str(eda[0][category][attribute]) + " | "
+            column += str(eda[1][category][attribute]) + " | "
+            column += str(eda[2][category][attribute]) + " | "
+            column += str(eda[3][category][attribute]) + " | "
+            text.append(column)
+
+        text.append("\n")
+
+    with open('working/exploratory_data_analysis.md', 'w') as f:
+        for item in text:
+            f.write("%s\n" % item)
+
