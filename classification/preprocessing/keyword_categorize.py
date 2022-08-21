@@ -3,8 +3,8 @@ import logging
 import html2text as html2text
 from flashtext.keyword import KeywordProcessor
 
+from classification.preprocessing import Category
 from config import Config
-from data_storage import GroundTruth, Category
 
 cfg = Config.get()
 log = logging.getLogger('keyword_categorize')

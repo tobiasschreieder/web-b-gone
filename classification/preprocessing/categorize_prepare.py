@@ -2,6 +2,7 @@ import logging
 from typing import List, Dict
 from bs4 import BeautifulSoup
 from pathlib import Path
+import tensorflow_datasets as tfds
 
 from config import Config
 from .keyword_categorize import find_class
@@ -27,8 +28,8 @@ class FeatureHolder:
     html: str
     url: str
     head: str
-    title: List[str]
-    link: List[str]
+    title: List[str] = []
+    link: List[str] = []
     largest_content: str
     domain_name: str
     text_all: str
@@ -61,17 +62,23 @@ def create_feature_list(web_ids: List[str]) -> List[FeatureHolder]:
     return feature_list
 
 
-def get_dict_from_feature_list(feature_list: List[FeatureHolder]) -> Dict:
-    train_dict = {}
+def get_dict_from_feature_list(feature_list: List[FeatureHolder]) -> List[Dict]:
+    train_dict = []
     for f in feature_list:
         train_dict.append({"web_id": f.web_id, "url": f.url, "head": f.head, "title": f.title,
                            "domain_name": f.domain_name, "html": f.html, "largest_content": f.largest_content,
                            "hyperlinks": f.link, "text_all": f.text_all})
     return train_dict
 
+def get_all_text_from_feature_list(feature_list: List[FeatureHolder]) -> List[Dict]:
+    train_dict = []
+    for f in feature_list:
+        train_dict.append({"text_all": f.text_all})
+    return train_dict
 
-def get_dict_from_feature_list_inkl_keyword_result(feature_list: List[FeatureHolder]) -> Dict:
-    train_dict = {}
+
+def get_dict_from_feature_list_inkl_keyword_result(feature_list: List[FeatureHolder]) -> List[Dict]:
+    train_dict = []
     for f in feature_list:
         train_dict.append({"web_id": f.web_id, "url": f.url, "head": f.head, "title": f.title,
                            "domain_name": f.domain_name, "html": f.html, "largest_content": f.largest_content,

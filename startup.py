@@ -3,6 +3,7 @@ import logging
 import pathlib
 from typing import Any, Dict
 
+from classification.category_models.category_networks.cat_net_v2 import CategoryNetworkV2
 from classification.category_models.decision_tree_model import DecisionTreeC5CategoryModel
 from classification.preprocessing import Category
 from config import Config
@@ -89,7 +90,7 @@ def main():
 
     log.info('do main stuff')
 
-    results_classification = classification.evaluate_classification(model_cls_classification=DecisionTreeC5CategoryModel,
+    results_classification = classification.evaluate_classification(model_cls_classification=CategoryNetworkV2,
                                                                     train_test_split=0.3,
                                                                     max_size=1000)
     log.info(results_classification)
