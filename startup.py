@@ -7,7 +7,7 @@ from classification.preprocessing import Category
 from config import Config
 # from frontend import start_server
 from evaluation import extraction
-from extraction import StructuredTemplateExtractionModel
+from extraction import StructuredTemplateExtractionModel, NeuralNetExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -93,11 +93,13 @@ def main():
     #                                                                 max_size=1000)
     # log.info(results_classification)
     #
-    results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
-                                                        category=Category.NBA_PLAYER,
-                                                        train_test_split=0.10,
-                                                        max_size=100)
-    log.info(results_extraction)
+    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
+    #                                                     category=Category.NBA_PLAYER,
+    #                                                     train_test_split=0.10,
+    #                                                     max_size=100)
+    # log.info(results_extraction)
+
+    net_ext = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
 
     # web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
     #

@@ -36,6 +36,7 @@ class ExtractionNetwork(abc.ABC):
         :param version:
         :return:
         """
+        found_versions = []
         # Find module with correct ExtractionNetwork class and import it.
         for module_path in Path(__file__).parent.iterdir():
             if module_path.suffix != '.py' or \
@@ -46,9 +47,12 @@ class ExtractionNetwork(abc.ABC):
             try:
                 return getattr(module, f'ExtractionNetwork{version}')
             except AttributeError:
+                match = [attr[17:] for attr in module.__dict__.keys() if str(attr).startswith('ExtractionNetwork')]
+                found_versions += match
                 continue
         else:
-            raise ValueError(f"No extraction network with version '{version}' found.")
+            raise ValueError(f"No extraction network with version '{version}' found. "
+                             f"Only found versions: {set(found_versions)}")
 
     @abc.abstractmethod
     def load(self) -> None:

@@ -1,15 +1,15 @@
-from typing import List, Dict
 from copy import copy
 from pathlib import Path
+from typing import List, Dict
 
-import spacy
 import numpy as np
+import spacy
 from bs4 import BeautifulSoup
 from bs4.element import Comment
-from keras.models import Sequential
 from keras.layers import Bidirectional, LSTM, TimeDistributed, Dense
+from keras.models import Sequential
 
-from classification.preprocessing import Category, Website
+from classification.preprocessing import Website
 from .base_extraction_network import BaseExtractionNetwork
 
 
@@ -21,7 +21,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
-    def predict(self, web_ids: List[str]) -> List[Dict[str, List[str]]]:
+    def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
         html_text = self.get_html_text(web_ids[0])
         # TODO: currently just predict first web_id
         website = Website.load(web_ids[0])
@@ -48,7 +48,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         # TODO: tranform result in correct format for return
         return result
 
-    def train(self, web_ids: List[str]) -> None:
+    def train(self, web_ids: List[str], **kwargs) -> None:
         epochs = 2
         batch_size = 32
 
