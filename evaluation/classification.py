@@ -11,26 +11,28 @@ AVERAGE = "macro"  # determines the type of averaging performed on the data, cho
 
 def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
                             train_test_split: float,
-                            max_size: int = -1, **model_kwargs) -> Dict[str, Dict[str, float]]:
+                            max_size: int = -1,
+                            split_type: str = "website", **model_kwargs) -> Dict[str, Dict[str, float]]:
     """
     Evaluate a given classification model
     :param model_cls_classification: Classification model which should be used
     :param train_test_split: Specify proportion of train data [0; 1]
     :param max_size: Size of sample which should be used, -1 -> all data will be used
+    :param split_type: String to define Split-Type, Choose between "website" and "domain"
     :param model_kwargs:
     :return: Dictionary with calculated metric scores
     """
     # Load and split data
     train_ids: List[str]
     test_ids: List[str]
-    train_ids, test_ids = split_data(train_test_split=train_test_split, split_type="website", max_size=max_size)
+    train_ids, test_ids = split_data(train_test_split=train_test_split, split_type=split_type, max_size=max_size)
 
     # Classification
     model_classification: BaseCategoryModel
 
     if model_cls_classification == NeuralNetCategoryModel:
         model_classification: NeuralNetCategoryModel = model_cls_classification(**model_kwargs)
-        model_classification.network.train(train_ids)
+        model_classification.network.train(web_ids=train_ids)
     else:
         model_classification = model_cls_classification(**model_kwargs)
 
@@ -83,11 +85,11 @@ def split_data(train_test_split: float, split_type: str, max_size: int = -1,
             train_domains = domains[:split_index]
             test_domains = domains[split_index:]
 
-            train_ids += Website.get_website_ids(max_size=int(cat_size*train_test_split), rdm_sample=True, seed=seed, categories=cat,
-                                                 domains=train_domains)
+            train_ids += Website.get_website_ids(max_size=int(cat_size*train_test_split), rdm_sample=True, seed=seed,
+                                                 categories=cat, domains=train_domains)
 
-            test_ids += Website.get_website_ids(max_size=int(cat_size*(1-train_test_split)), rdm_sample=True, seed=seed, categories=cat,
-                                                domains=test_domains)
+            test_ids += Website.get_website_ids(max_size=int(cat_size*(1-train_test_split)), rdm_sample=True, seed=seed,
+                                                categories=cat, domains=test_domains)
 
     else:
         return [], []

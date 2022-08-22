@@ -8,20 +8,22 @@ from extraction.extraction_models import BaseExtractionModel
 def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
                         category: Category,
                         train_test_split: float,
-                        max_size: int = -1, **model_kwargs) -> Dict[str, Dict[str, float]]:
+                        max_size: int = -1,
+                        split_type: str = "website", **model_kwargs) -> Dict[str, Dict[str, float]]:
     """
     Evaluate a given extraction model
     :param model_cls_extraction: Extraction model which should be used
     :param category: Category which should be evaluated
     :param train_test_split: Specify proportion of train data
     :param max_size: Size of sample which should be used, -1 -> all data will be used
+    :param split_type: String to define Split-Type, Choose between "website" and "domain"
     :param model_kwargs:
     :return: Dictionary with calculated metric scores
     """
     # Load and split data
     train_ids: List[str]
     test_ids: List[str]
-    train_ids, test_ids = split_data(category=category, train_test_split=train_test_split, split_type="website",
+    train_ids, test_ids = split_data(category=category, train_test_split=train_test_split, split_type=split_type,
                                      max_size=max_size)
 
     # Extraction
@@ -63,7 +65,7 @@ def split_data(category: Category, train_test_split: float, split_type: str, max
     test_ids = list()
 
     if split_type == "website":
-        web_ids: List[str] = Website.get_website_ids(categories=category, rdm_sample=True, seed=seed)
+        web_ids: List[str] = Website.get_website_ids(max_size=max_size, categories=category, rdm_sample=True, seed=seed)
 
         split_index = int(len(web_ids) * train_test_split)
         train_ids = web_ids[:split_index]
