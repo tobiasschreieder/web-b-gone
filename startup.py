@@ -1,10 +1,11 @@
 import argparse
 import logging
 import pathlib
+import matplotlib.pyplot as plt
 from typing import Any, Dict
 
 from classification.category_models import RandomCategoryModel
-from classification.preprocessing import Category, Website
+from classification.preprocessing import Category, Website, extract_restruc_swde
 from config import Config
 # from frontend import start_server
 from evaluation import extraction, classification
@@ -108,27 +109,10 @@ def main():
     # struc_temp_model.train(web_ids[0:5])
     # result = struc_temp_model.extract(web_ids[5:10])
 
-    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_2', 'NerV2')
+    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
     history = ner_temp_model.train(web_ids[0:8])
     result = ner_temp_model.extract(web_ids[8:10])
     print(result)
-
-    if history:
-        plt.plot(history.history['acc'])
-        plt.plot(history.history['val_acc'])
-        plt.title('model accuracy')
-        plt.ylabel('accuracy')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'val'], loc='upper left')
-        plt.show()
-
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('model loss')
-        plt.ylabel('loss')
-        plt.xlabel('epoch')
-        plt.legend(['train', 'val'], loc='upper left')
-        plt.show()
 
     pass
 

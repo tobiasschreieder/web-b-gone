@@ -10,3 +10,4 @@ numpy
 nltk
 sklearn
 spacy
+matplotlib

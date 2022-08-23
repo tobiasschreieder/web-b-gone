@@ -10,10 +10,10 @@ from classification.preprocessing import Website
 from .base_extraction_network import BaseExtractionNetwork
 
 
-class ExtractionNetworkNerV2(BaseExtractionNetwork):
+class ExtractionNetworkNerV3(BaseExtractionNetwork):
 
     def __init__(self, name: str, **kwargs):
-        super().__init__(name=name, version='NerV2',
+        super().__init__(name=name, version='NerV3',
                          description='Try to extract information with multiple own NER-Models - one Model for one Entity')
         self.nlp = spacy.load('en_core_web_sm')
         self.EMB_DIM = self.nlp.vocab.vectors_length
@@ -21,39 +21,8 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
 
     def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
         html_text = nerHelper.get_html_text(web_ids[0])
-        # TODO: currently just predict first web_id
-        website = Website.load(web_ids[0])
-        attributes = website.truth.attributes
-        attributes.pop('category')
-        new_attributes = {}
-        for attr, value in attributes.items():
-            value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
-            new_attributes[str(attr).upper()] = value_preprocessed
-
-        pred_samples = nerHelper.html_text_to_BIO(html_text, new_attributes)
-
-        X_pred, y_pred, schema = self.preprocess(pred_samples)
-
-        self.load()
-        y_probs = self.model.predict(X_pred)
-        y_pred = np.argmax(y_probs, axis=-1)
-        result = []
-        for sentence, tag_pred in zip(pred_samples, y_pred):
-            for (token, tag), index in zip(sentence, tag_pred):
-                # result.append([(token, tag, schema[index])])
-                result.append((token, schema[index]))
-
-        # TODO: tranform result in correct format for return
-        return result
-
-    def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 2
-        batch_size = 32
-
-        train_samples = []
+        results = []
         for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
-
             website = Website.load(web_id)
             attributes = website.truth.attributes
             attributes.pop('category')
@@ -62,22 +31,84 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                 value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
                 new_attributes[str(attr).upper()] = value_preprocessed
 
-            train_samples += nerHelper.html_text_to_BIO(html_text, new_attributes)
-            print(len(train_samples))
+            pred_samples = nerHelper.html_text_to_BIO(html_text, new_attributes)
 
-        X_train, y_train, schema_train = self.preprocess(train_samples)
+            X_pred, y_pred, schema = self.preprocess(pred_samples)
 
-        model = self.build_model(schema=schema_train)
+            self.load()
+            y_probs = self.model.predict(X_pred)
+            y_pred = np.argmax(y_probs, axis=-1)
+            id_result = {}
+            for attr in attributes:
+                id_result[str(attr).upper()] = []
+            for sentence, tag_pred in zip(pred_samples, y_pred):
+                in_tag = False
+                current_token = ""
+                for (token, tag), index in zip(sentence, tag_pred):
+                    if tag not in ['_', 'O']:
+                        if not in_tag:
+                            in_tag = tag
+                            current_token = str(token)
+                        elif tag == in_tag:
+                            current_token += " " + str(token)
+                        elif not tag == in_tag:
+                            if current_token not in id_result[in_tag]:
+                                id_result[in_tag].append(current_token)
+                            current_token = ""
+                            in_tag = tag
+                    else:
+                        if in_tag:
+                            if current_token not in id_result[in_tag]:
+                                id_result[in_tag].append(current_token)
+                            current_token = ""
+                            in_tag = False
+                if in_tag:
+                    if current_token not in id_result[in_tag]:
+                        id_result[in_tag].append(current_token)
+            results.append(id_result)
+        return results
 
-        model.compile(optimizer='Adam',
-                      loss='sparse_categorical_crossentropy',
-                      metrics='accuracy')
-        history = model.fit(X_train, y_train,
-                            validation_split=0.2,
-                            epochs=epochs,
-                            batch_size=batch_size)
-        self.model = model
-        self.save()
+    def train(self, web_ids: List[str], **kwargs) -> None:
+        epochs = 10
+        batch_size = 32
+
+        website = Website.load(web_ids[0])
+        attributes = website.truth.attributes
+        attributes.pop('category')
+
+        for attr in attributes:
+            attribute = attr.upper()
+            print("TRAINING FOR ATTRIBUTE: ", attribute)
+
+            train_samples = []
+            for web_id in web_ids:
+                html_text = nerHelper.get_html_text(web_id)
+
+                website = Website.load(web_id)
+                attributes = website.truth.attributes
+                attributes.pop('category')
+                new_attributes = {}
+                value = attributes[attribute]
+                value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
+                new_attributes[str(attr).upper()] = value_preprocessed
+
+                train_samples += nerHelper.html_text_to_BIO(html_text, new_attributes)
+
+            X_train, y_train, schema_train = self.preprocess(train_samples)
+
+            model = self.build_model(schema=schema_train)
+
+            model.compile(optimizer='Adam',
+                          loss='sparse_categorical_crossentropy',
+                          metrics='accuracy')
+            history = model.fit(X_train, y_train,
+                                validation_split=0.2,
+                                epochs=epochs,
+                                batch_size=batch_size)
+
+            #TODO: save every model for every entity correct!
+            self.model = model
+            self.save()
 
     def preprocess(self, samples):
         schema = ['_'] + sorted({tag for sentence in samples for _, tag in sentence})

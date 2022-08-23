@@ -46,7 +46,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                 current_token = ""
                 for (token, tag), index in zip(sentence, tag_pred):
                     if tag not in ['_', 'O']:
-                        print(token, tag, current_token, in_tag)
                         if not in_tag:
                             in_tag = tag
                             current_token = str(token)
@@ -66,13 +65,11 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                 if in_tag:
                     if current_token not in id_result[in_tag]:
                         id_result[in_tag].append(current_token)
-                    current_token = ""
-                    in_tag = False
             results.append(id_result)
         return results
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 2
+        epochs = 10
         batch_size = 32
 
         train_samples = []
@@ -88,7 +85,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                 new_attributes[str(attr).upper()] = value_preprocessed
 
             train_samples += nerHelper.html_text_to_BIO(html_text, new_attributes)
-            print(len(train_samples))
 
         X_train, y_train, schema_train = self.preprocess(train_samples)
 
@@ -103,8 +99,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                             batch_size=batch_size)
         self.model = model
         self.save()
-
-        return history
 
     def preprocess(self, samples):
         schema = ['_'] + sorted({tag for sentence in samples for _, tag in sentence})

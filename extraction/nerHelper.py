@@ -44,5 +44,22 @@ def html_text_to_BIO(text, attributes):
         bio_format.append(bio_line)
     return bio_format
 
-def bio_text_to_spacy(text, new_attributes):
-    pass
+def html_text_to_spacy(html_text, attributes):
+    text = ""
+    entities = []
+
+    for line in html_text:
+        text += str(line) + " "
+
+    text_list = text.split(" ")
+    text_len_list = [len(i) for i in text_list]
+    for attr, value in attributes.items():
+        value_list = value.split(" ")
+        indices = [i for i, x in enumerate(text_list) if x == value_list[0]]
+        for i in indices:
+            if text_list[i:i+len(value_list)] == value_list:
+                start_index = sum(text_len_list[:i]) + len(text_len_list[:i])
+                pos = i + len(value_list)
+                end_index = sum(text_len_list[:pos]) + len(text_len_list[:pos]) - 1
+                entities.append((start_index, end_index, attr))
+    return {'text': text, 'entities': entities}
