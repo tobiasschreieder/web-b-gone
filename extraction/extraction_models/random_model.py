@@ -40,7 +40,7 @@ class RandomExtractionModel(BaseExtractionModel):
                 htm_text = soup.get_text(separator=' ')
 
                 result.append({
-                    key: [_get_rdm_words(htm_text) for _ in range(random.randint(0, 1))]
+                    key: [_get_rdm_words(htm_text) for _ in range(random.randint(0, 3))]
                     for key in self.category.get_attribute_names()
                 })
 
