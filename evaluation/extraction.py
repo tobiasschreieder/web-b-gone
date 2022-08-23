@@ -34,16 +34,18 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     # out of sample prediction
     if len(test_ids) != 0:
         results_extraction_test = extraction_metrics(model_extraction.extract(web_ids=test_ids),
-                                                [GroundTruth.load(web_id).attributes for web_id in test_ids])
+                                                     [GroundTruth.load(web_id).attributes for web_id in test_ids])
     else:
-        results_extraction_test = {"exact_match": None, "f1": None}
+        results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
+                                   "f1_top_1": None, "f1_top_3": None}
 
     # in sample prediction
     if len(train_ids) != 0:
         results_extraction_train = extraction_metrics(model_extraction.extract(web_ids=train_ids),
-                                                     [GroundTruth.load(web_id).attributes for web_id in train_ids])
+                                                      [GroundTruth.load(web_id).attributes for web_id in train_ids])
     else:
-        results_extraction_train = {"exact_match": None, "f1": None}
+        results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
+                                    "f1_top_1": None, "f1_top_3": None}
 
     results = {"out of sample": results_extraction_test, "in sample": results_extraction_train}
 
@@ -117,9 +119,13 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
     pred = format_data_extraction(data=pred)
     truth = format_data_extraction(data=truth)
 
-    exact_match = comparison.exact_match(truth=truth, pred=pred)
-    f1 = comparison.f1(truth=truth, pred=pred)
+    exact_match_top_1 = comparison.exact_match(truth=truth, pred=pred, top_k=1)
+    f1_top_1 = comparison.f1(truth=truth, pred=pred, top_k=1)
 
-    results = {"exact_match": exact_match, "f1": f1}
+    exact_match_top_3 = comparison.exact_match(truth=truth, pred=pred, top_k=3)
+    f1_top_3 = comparison.f1(truth=truth, pred=pred, top_k=3)
+
+    results = {"exact_match_top_1": exact_match_top_1, "exact_match_top_3": exact_match_top_3,
+               "f1_top_1": f1_top_1, "f1_top_3": f1_top_3}
 
     return results
