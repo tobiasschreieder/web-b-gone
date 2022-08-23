@@ -1,28 +1,26 @@
-from copy import copy
-from pathlib import Path
 from typing import List, Dict
 
 import numpy as np
 import spacy
-from bs4 import BeautifulSoup
-from bs4.element import Comment
 from keras.layers import Bidirectional, LSTM, TimeDistributed, Dense
 from keras.models import Sequential
 
+from extraction import nerHelper
 from classification.preprocessing import Website
 from .base_extraction_network import BaseExtractionNetwork
 
 
-class ExtractionNetworkNerV1(BaseExtractionNetwork):
+class ExtractionNetworkNerV2(BaseExtractionNetwork):
 
     def __init__(self, name: str, **kwargs):
-        super().__init__(name=name, version='NER_v1', description='Try to extract information with NER')
+        super().__init__(name=name, version='NerV2',
+                         description='Try to extract information with multiple own NER-Models - one Model for one Entity')
         self.nlp = spacy.load('en_core_web_sm')
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
     def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
-        html_text = self.get_html_text(web_ids[0])
+        html_text = nerHelper.get_html_text(web_ids[0])
         # TODO: currently just predict first web_id
         website = Website.load(web_ids[0])
         attributes = website.truth.attributes
@@ -32,7 +30,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
             new_attributes[str(attr).upper()] = value_preprocessed
 
-        pred_samples = self.html_text_to_BIO(html_text, new_attributes)
+        pred_samples = nerHelper.html_text_to_BIO(html_text, new_attributes)
 
         X_pred, y_pred, schema = self.preprocess(pred_samples)
 
@@ -54,7 +52,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
         train_samples = []
         for web_id in web_ids:
-            html_text = self.get_html_text(web_id)
+            html_text = nerHelper.get_html_text(web_id)
 
             website = Website.load(web_id)
             attributes = website.truth.attributes
@@ -64,7 +62,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
                 value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
                 new_attributes[str(attr).upper()] = value_preprocessed
 
-            train_samples += self.html_text_to_BIO(html_text, new_attributes)
+            train_samples += nerHelper.html_text_to_BIO(html_text, new_attributes)
             print(len(train_samples))
 
         X_train, y_train, schema_train = self.preprocess(train_samples)
@@ -81,47 +79,9 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         self.model = model
         self.save()
 
-    def tag_visible(self, element):
-        if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
-            return False
-        if isinstance(element, Comment):
-            return False
-        return True
-
-    def get_html_text(self, web_id):
-        print(web_id)
-        website = Website.load(web_id)
-        with Path(website.file_path).open(encoding='utf-8') as htm_file:
-            soup = BeautifulSoup(htm_file, features="html.parser")
-        texts = soup.findAll(text=True)
-        visible_texts = filter(self.tag_visible, texts)
-        line_list = []
-        for line in [t.strip() for t in visible_texts]:
-            if line:
-                line = ' '.join(line.split())
-                line_list.append(line)
-        return line_list
-
-    def html_text_to_BIO(self, text, attributes):
-        bio_format = []
-        for line in text:
-            labels = ['O'] * len(copy(line).split(' '))
-            line_list = line.split(" ")
-            for attr, value in attributes.items():
-                value_list = value.split(" ")
-                if (value in line) and (value_list[0] in line_list):
-                    start_index = line_list.index(value_list[0])
-                    for i in range(len(value_list)):
-                        labels[start_index + i] = attr
-            bio_line = []
-            for i in range(len(line_list)):
-                bio_line.append((line_list[i], labels[i]))
-            bio_format.append(bio_line)
-        return bio_format
-
     def preprocess(self, samples):
-        # schema = ['_'] + sorted({tag for sentence in samples for _, tag in sentence})
-        schema = sorted({tag for sentence in samples for _, tag in sentence})
+        schema = ['_'] + sorted({tag for sentence in samples for _, tag in sentence})
+        # schema = sorted({tag for sentence in samples for _, tag in sentence})
         print(schema)
         tag_index = {tag: index for index, tag in enumerate(schema)}
         X = np.zeros((len(samples), self.MAX_LEN, self.EMB_DIM), dtype=np.float32)
