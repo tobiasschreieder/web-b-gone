@@ -19,7 +19,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
     def __init__(self, name: str, **kwargs):
         super().__init__(name=name, version='NerV1',
                          description='Try to extract information with custom SPACY-Model')
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = spacy.load('en_core_web_md')
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
@@ -40,7 +40,6 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
                 id_results[str(attr).upper()] = []
 
             doc = nlp2(html_text)
-            print("Entities in '%s'" % test_text)
             for ent in doc.ents:
                 id_results[ent.label_].append(ent.text)
 
@@ -49,12 +48,12 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
             result_list.append(id_results)
 
-        return result
+        return result_list
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         epochs = 50
 
-        training_data = {'classes' : [], 'annotations' : []}
+        training_data = {'classes': [], 'annotations': []}
         for web_id in web_ids:
             html_text = nerHelper.get_html_text(web_id)
 
@@ -63,8 +62,11 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             attributes.pop('category')
             new_attributes = {}
             for attr, value in attributes.items():
-                value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
-                new_attributes[str(attr).upper()] = value_preprocessed
+                if value:
+                    value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
+                    new_attributes[str(attr).upper()] = value_preprocessed
+                else:
+                    new_attributes[str(attr).upper()] = []
 
             training_data['annotations'].append(nerHelper.html_text_to_spacy(html_text, new_attributes))
 
@@ -87,17 +89,19 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             for itn in range(epochs):
                 random.shuffle(training_data['annotations'])
                 losses = {}
-                for content in training_data['annotations']:
-                    # create Example
-                    doc = nlp.make_doc(content['text'])
-                    example = Example.from_dict(doc, content)
-                    # Update the model
-                    nlp.update([example], losses=losses, drop=0.3, sgd=optimizer)
-                print('Losses', losses)
+                for batch in spacy.util.minibatch(training_data['annotations'], size=8):
+                    for content in batch:
+                        # create Example
+                        doc = nlp.make_doc(content['text'])
+                        example = Example.from_dict(doc, content)
+                        # Update the model
+                        nlp.update([example], losses=losses, drop=0.3, sgd=optimizer)
+                print('Iteration', str(itn+1), '/', str(epochs), ' with loss:', losses)
 
         #TODO save and load the model, because it is no KERAS-Model
         # ---------
         # Save model
+
         if output_dir is not None:
             output_dir = Path(output_dir)
             if not output_dir.exists():
