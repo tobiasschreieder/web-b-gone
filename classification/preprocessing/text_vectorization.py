@@ -1,4 +1,8 @@
 import logging
+
+import numpy as np
+import pandas as pd
+
 from config import Config
 
 import tensorflow as tf
@@ -43,16 +47,20 @@ def configure_dataset(dataset):
     return dataset.cache().prefetch(buffer_size=AUTOTUNE)
 
 
-def tf_vectorisation_binary(train_text, raw_train_ds): #raw_val_ds, raw_test_ds
-
+def tf_vectorisation_binary(train_data_list : pd.DataFrame, raw_val_ds): #raw_val_ds, raw_test_ds
+    #train_data_list = train_data_list[["text_all", "true_category"]]
+    #https://notebook.community/mitdbg/modeldb/client/workflows/demos/tf-text-classification
+    train_text = tf.data.Dataset.from_tensor_slices((np.asarray(train_data_list["text_all"].astype('str')), np.asarray(train_data_list["true_category"].astype('str'))))
     binary_vectorize_layer.adapt(train_text)
+    raw_val_ds = tf.data.Dataset.from_tensor_slices((np.asarray(raw_val_ds["text_all"].astype('str')), np.asarray(raw_val_ds["true_category"].astype('str'))))
+    binary_vectorize_layer.adapt(raw_val_ds)
 
     binary_train_ds = train_text.map(binary_vectorize_text)
-    #binary_val_ds = raw_val_ds.map(binary_vectorize_text)
+    binary_val_ds = raw_val_ds.map(binary_vectorize_text)
     #binary_test_ds = raw_test_ds.map(binary_vectorize_text)
 
     binary_train_ds = configure_dataset(binary_train_ds)
-    #binary_val_ds = configure_dataset(binary_val_ds)
+    binary_val_ds = configure_dataset(binary_val_ds)
     #binary_test_ds = configure_dataset(binary_test_ds)
 
     binary_model = tf.keras.Sequential([layers.Dense(4)])
@@ -61,10 +69,7 @@ def tf_vectorisation_binary(train_text, raw_train_ds): #raw_val_ds, raw_test_ds
         loss=losses.SparseCategoricalCrossentropy(from_logits=True),
         optimizer='adam',
         metrics=['accuracy'])
-    history = binary_model.fit(binary_train_ds, raw_train_ds,
-                        validation_split=0.2,
-                        epochs=10,
-                        batch_size=32)
+    history = binary_model.fit(binary_train_ds,validation_data=binary_val_ds, epochs=5)
 
 """
     history = binary_model.fit(

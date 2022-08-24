@@ -1,6 +1,5 @@
 import logging
 
-import html2text as html2text
 from flashtext.keyword import KeywordProcessor
 
 from classification.preprocessing import Category

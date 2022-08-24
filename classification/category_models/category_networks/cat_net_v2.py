@@ -20,7 +20,7 @@ from tensorflow.python.keras.metrics import binary_accuracy
 from .base_category_network import BaseCategoryNetwork
 from ...preprocessing import Category, text_vectorization
 from ...preprocessing.categorize_prepare import get_dict_from_feature_list, create_feature_list, get_true_categorys, \
-    get_all_text_from_feature_list
+    get_all_text_from_feature_list, get_dict_from_feature_list_inkl_keyword_result
 
 
 class CategoryNetworkV2(BaseCategoryNetwork):
@@ -43,9 +43,11 @@ class CategoryNetworkV2(BaseCategoryNetwork):
 
 
     def train(self, web_ids: List[str]) -> None:
-        feature_dict = get_all_text_from_feature_list(create_feature_list(web_ids))
+        #feature_dict = get_all_text_from_feature_list(create_feature_list(web_ids), web_ids)
+        #todo train / val split
+        feature_dict = get_dict_from_feature_list_inkl_keyword_result(create_feature_list(web_ids), web_ids)
         result_list = get_true_categorys(web_ids)
-        text_vectorization.tf_vectorisation_binary(feature_dict["text_all"], result_list)
+        text_vectorization.tf_vectorisation_binary(feature_dict, feature_dict)
         self.model = self.build_model(text_vectorization.binary_vectorize_layer, text_vectorization.binary_model)
         self.save()
         # (number of inputs + 1 output)/2 = #hiddenLayers

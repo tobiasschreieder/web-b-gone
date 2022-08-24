@@ -19,6 +19,7 @@ class Category(Enum):
     NBA_PLAYER = 'NBA Player'
     RESTAURANT = 'Restaurant'
     UNIVERSITY = 'University'
+    NONE = 'NONE'
 
     @staticmethod
     def get(name: str) -> 'Category':

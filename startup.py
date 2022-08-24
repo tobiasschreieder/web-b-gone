@@ -3,9 +3,10 @@ import logging
 import pathlib
 from typing import Any, Dict
 
+from classification.category_models import NeuralNetCategoryModel
 from classification.category_models.category_networks.cat_net_v2 import CategoryNetworkV2
 from classification.category_models.decision_tree_model import DecisionTreeC5CategoryModel
-from classification.preprocessing import Category
+from classification.preprocessing import Category, Website
 from config import Config
 # from frontend import start_server
 from evaluation import extraction, classification
@@ -90,10 +91,15 @@ def main():
 
     log.info('do main stuff')
 
-    results_classification = classification.evaluate_classification(model_cls_classification=CategoryNetworkV2,
-                                                                    train_test_split=0.3,
-                                                                    max_size=1000)
-    log.info(results_classification)
+    web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
+    net_cat = NeuralNetCategoryModel('name', 'V2')
+    net_cat.network.train(web_ids)
+    net_cat.classification(web_ids)
+
+    #results_classification = classification.evaluate_classification(model_cls_classification=NeuralNetCategoryModel,
+    #                                                                train_test_split=0.3,
+    #                                                                max_size=1000, name='name', version='V2')
+    #log.info(results_classification)
     #
     # results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
     #                                                     category=Category.NBA_PLAYER,
