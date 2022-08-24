@@ -1,4 +1,5 @@
 import logging
+import threading
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -122,9 +123,9 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
 
             return sort_n_score_candidates(candidates, self.template, k=k)
 
-        return [extract_web_id(web_id) for web_id in web_ids]
-        # if len(web_ids) > 20:
-        #     with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
-        #         return parallel(delayed(extract_web_id)(web_id) for web_id in web_ids)
-        # else:
-        #     return [extract_web_id(web_id) for web_id in web_ids]
+        # return [extract_web_id(web_id) for web_id in web_ids]
+        if len(web_ids) > 20:
+            with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
+                return parallel(delayed(extract_web_id)(web_id) for web_id in web_ids)
+        else:
+            return [extract_web_id(web_id) for web_id in web_ids]
