@@ -1,13 +1,11 @@
 import argparse
 import logging
 import pathlib
-import matplotlib.pyplot as plt
 from typing import Any, Dict
 
 from classification.category_models import RandomCategoryModel
-from classification.preprocessing import Category, Website, extract_restruc_swde
+from classification.preprocessing import Category, Website
 from config import Config
-# from frontend import start_server
 from evaluation import extraction, classification
 from extraction import StructuredTemplateExtractionModel, RandomExtractionModel, NeuralNetExtractionModel
 from utils import setup_logger_handler
@@ -96,24 +94,29 @@ def main():
     #                                                                 split_type="website")
     # log.info(results_classification)
 
-    results_extraction = extraction.evaluate_extraction(model_cls_extraction=NeuralNetExtractionModel,
-                                                        category=Category.NBA_PLAYER,
-                                                        train_test_split=0.7,
-                                                        max_size=50,
-                                                        split_type="website",
-                                                        **{"name": "text_1", "version": "NerV1"})
-    log.info(results_extraction)
+    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=NeuralNetExtractionModel,
+    #                                                     category=Category.NBA_PLAYER,
+    #                                                     train_test_split=0.7,
+    #                                                     max_size=50,
+    #                                                     split_type="website",
+    #                                                     **{"name": "text_1", "version": "NerV1"})
+    # log.info(results_extraction)
 
-    web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
+    web_ids = []
+    train_ids = []
+    for dom in Website.get_all_domains(Category.NBA_PLAYER):
+        ids = Website.get_website_ids(max_size=5, categories=Category.NBA_PLAYER, domains=dom)
+        web_ids += ids[1:]
+        train_ids += ids[:1]
 
-    # struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
-    # struc_temp_model.train(web_ids[0:5])
-    # result = struc_temp_model.extract(web_ids[5:10])
+    struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER, 'all_doms')
+    struc_temp_model.train(train_ids)
+    result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
 
-    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
-    history = ner_temp_model.train(web_ids[0:8])
-    result = ner_temp_model.extract(web_ids[8:10])
-    print(result)
+    # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
+    # history = ner_temp_model.train(web_ids[0:8])
+    # result = ner_temp_model.extract(web_ids[8:10])
+    # print(result)
 
     pass
 

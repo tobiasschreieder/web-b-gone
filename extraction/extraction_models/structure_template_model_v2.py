@@ -11,14 +11,24 @@ from config import Config
 from .base_model import BaseExtractionModel
 from ..structure_helper_v2 import simple_string_match, build_text_position_mapping, \
     candidates_filter, get_longest_element, StructuredTemplate, sort_n_score_candidates, build_mapping
+from utils import get_threading_logger
+
+cfg = Config.get()
 
 
 class StructuredTemplateExtractionModel(BaseExtractionModel):
     template: StructuredTemplate
     log = logging.getLogger('StrucTempExtModel')
 
-    def __init__(self, category: Category):
+    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/strucTemp/'))
+    name: str
+
+    def __init__(self, category: Category, name: str):
         super().__init__(category)
+        self.name = name
+        self.template = None
+        self.dir_path = self.dir_path.joinpath(self.name)
+        self.dir_path.mkdir(parents=True, exist_ok=True)
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """
@@ -78,6 +88,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
                                        web_id=web_id)
         # TODO: cluster templates
         self.template = template
+        self.template.save(self.dir_path)
 
     def extract(self, web_ids: List[str], n_jobs: int = -1, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
@@ -90,10 +101,12 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         :param k: number of results per attribute, default: 3
         :return: Extracted information
         """
+        if self.template is None:
+            self.template = StructuredTemplate.load(self.dir_path)
 
         def extract_web_id(web_id: str) -> Dict[str, List[str]]:
             website = Website.load(web_id)
-            self.log.debug(f'Extract for web_id {web_id}')
+            get_threading_logger('StrucTempExtModel').debug(f'Extract for web_id {web_id}')
             with Path(website.file_path).open(encoding='utf-8') as htm_file:
                 soup = BeautifulSoup(htm_file, features="html.parser")
 
