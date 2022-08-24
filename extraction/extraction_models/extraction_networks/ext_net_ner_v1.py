@@ -122,38 +122,3 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
         self.model = nlp
         self.save()
-
-    def preprocess(self, samples):
-        schema = ['_'] + sorted({tag for sentence in samples for _, tag in sentence})
-        # schema = sorted({tag for sentence in samples for _, tag in sentence})
-        print(schema)
-        tag_index = {tag: index for index, tag in enumerate(schema)}
-        X = np.zeros((len(samples), self.MAX_LEN, self.EMB_DIM), dtype=np.float32)
-        y = np.zeros((len(samples), self.MAX_LEN), dtype=np.uint8)
-        vocab = self.nlp.vocab
-        for i, sentence in enumerate(samples):
-            for j, (token, tag) in enumerate(sentence[:self.MAX_LEN]):
-                X[i, j] = vocab.get_vector(token)
-                y[i, j] = tag_index[tag]
-        return X, y, schema
-
-    def load_data(self, filename: str):
-        with open(filename, 'r', encoding="utf8") as file:
-            lines = [line[:-1].split() for line in file]
-        samples, start = [], 0
-        for end, parts in enumerate(lines):
-            if not parts:
-                sample = [(token, tag.split('-')[-1]) for token, tag in lines[start:end]]
-                samples.append(sample)
-                start = end + 1
-        if start < end:
-            samples.append(lines[start:end])
-        return samples
-
-    def build_model(self, schema, nr_filters=256):
-        input_shape = (self.MAX_LEN, self.EMB_DIM)
-        lstm = LSTM(nr_filters, return_sequences=True)
-        bi_lstm = Bidirectional(lstm, input_shape=input_shape)
-        tag_classifier = Dense(len(schema), activation='softmax')
-        sequence_labeller = TimeDistributed(tag_classifier)
-        return Sequential([bi_lstm, sequence_labeller])

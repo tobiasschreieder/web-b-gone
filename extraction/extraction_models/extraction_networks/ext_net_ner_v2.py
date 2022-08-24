@@ -70,7 +70,7 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
         return results
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 10
+        epochs = 3
         batch_size = 64
 
         train_samples = []
@@ -98,7 +98,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                       metrics='accuracy')
 
         history = model.fit(X_train, y_train,
-                            validation_split=0.2,
                             epochs=epochs,
                             batch_size=batch_size,
                             validation_data=(X_valid, y_valid))
@@ -112,6 +111,7 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
         y = np.zeros((len(samples), self.MAX_LEN), dtype=np.uint8)
         vocab = self.nlp.vocab
         for i, sentence in enumerate(samples):
+            print(sentence)
             for j, (token, tag) in enumerate(sentence[:self.MAX_LEN]):
                 X[i, j] = vocab.get_vector(token)
                 y[i, j] = tag_index[tag]
@@ -124,19 +124,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
             for j, token in enumerate(sentence[:self.MAX_LEN]):
                 X[i, j] = vocab.get_vector(token)
         return X
-
-    def load_data(self, filename: str):
-        with open(filename, 'r', encoding="utf8") as file:
-            lines = [line[:-1].split() for line in file]
-        samples, start = [], 0
-        for end, parts in enumerate(lines):
-            if not parts:
-                sample = [(token, tag.split('-')[-1]) for token, tag in lines[start:end]]
-                samples.append(sample)
-                start = end + 1
-        if start < end:
-            samples.append(lines[start:end])
-        return samples
 
     def build_model(self, schema, nr_filters=256):
         input_shape = (self.MAX_LEN, self.EMB_DIM)

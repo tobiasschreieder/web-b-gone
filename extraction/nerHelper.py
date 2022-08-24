@@ -13,6 +13,7 @@ def tag_visible(element):
         return False
     return True
 
+
 def get_html_text(web_id):
     print(web_id)
     website = Website.load(web_id)
@@ -21,11 +22,23 @@ def get_html_text(web_id):
     texts = soup.findAll(text=True)
     visible_texts = filter(tag_visible, texts)
     line_list = []
+    temp_line = []
     for line in [t.strip() for t in visible_texts]:
         if line:
             line = ' '.join(line.split())
-            line_list.append(line)
+            if len(line) < 20:
+                temp_line.append(line)
+                if len(temp_line) > 20:
+                    line_list.append(' '.join(temp_line))
+                    temp_line = []
+            else:
+                if temp_line:
+                    line_list.append(' '.join(temp_line))
+                    temp_line = []
+                line_list.append(line)
+    print(line_list)
     return line_list
+
 
 def html_text_to_BIO(text, attributes):
     bio_format = []
@@ -43,6 +56,7 @@ def html_text_to_BIO(text, attributes):
             bio_line.append((line_list[i], labels[i]))
         bio_format.append(bio_line)
     return bio_format
+
 
 def html_text_to_spacy(html_text, attributes):
     text = ""
