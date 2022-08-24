@@ -68,7 +68,14 @@ def html_text_to_spacy(html_text, attributes):
     text_list = text.split(" ")
     text_len_list = [len(i) for i in text_list]
     for attr, value in attributes.items():
-        value_list = value.split(" ")
+        if value and isinstance(value, list):
+            value = value[0]
+            value_list = value.split(" ")
+        elif isinstance(value, str):
+            value_list = value.split(" ")
+        else:
+            print("nothing there", attr, value)
+            continue
         indices = [i for i, x in enumerate(text_list) if x == value_list[0]]
         for i in indices:
             if text_list[i:i+len(value_list)] == value_list:
