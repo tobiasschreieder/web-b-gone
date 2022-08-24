@@ -33,7 +33,7 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     model_extraction = model_cls_extraction(category, **model_kwargs)
     model_extraction.train(train_ids)
 
-    # out of sample prediction
+    # Out of sample prediction
     if len(test_ids) != 0:
         results_extraction_test = extraction_metrics(model_extraction.extract(web_ids=test_ids),
                                                      [GroundTruth.load(web_id).attributes for web_id in test_ids])
@@ -41,7 +41,7 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
                                    "f1_top_1": None, "f1_top_3": None}
 
-    # in sample prediction
+    # In sample prediction
     if len(train_ids) != 0:
         results_extraction_train = extraction_metrics(model_extraction.extract(web_ids=train_ids),
                                                       [GroundTruth.load(web_id).attributes for web_id in train_ids])
@@ -49,10 +49,10 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
                                     "f1_top_1": None, "f1_top_3": None}
 
-    # combine results
+    # Combine results
     results = {"out of sample": results_extraction_test, "in sample": results_extraction_train}
 
-    # save results as MD-File
+    # Save results as MD-File
     if save_results:
         parameters = {"Model": model_cls_extraction, "Category": category, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split}

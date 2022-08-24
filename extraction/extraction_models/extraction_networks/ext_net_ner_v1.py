@@ -35,7 +35,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
             id_results = {}
             for attr in attributes:
-                id_results[str(attr).upper()] = []
+                id_results[str(attr)] = []
 
             doc = self.model(' '.join(html_text))
             # doc = self.model(html_text)
@@ -67,9 +67,9 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             for attr, value in attributes.items():
                 if value:
                     value_preprocessed = str(value[0]).replace('&nbsp;', ' ').strip()
-                    new_attributes[str(attr).upper()] = value_preprocessed
+                    new_attributes[str(attr)] = value_preprocessed
                 else:
-                    new_attributes[str(attr).upper()] = []
+                    new_attributes[str(attr)] = []
 
             training_data['annotations'].append(nerHelper.html_text_to_spacy(html_text, new_attributes))
 
@@ -81,8 +81,8 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             ner = nlp.get_pipe('ner')
 
         for attr in attributes:
-            training_data['classes'].append(str(attr).upper())
-            self.log.debug("Attribute added: %s", attr.upper())
+            training_data['classes'].append(str(attr))
+            self.log.debug("Attribute added: %s", attr)
             ner.add_label(attr)
 
         optimizer = nlp.begin_training()

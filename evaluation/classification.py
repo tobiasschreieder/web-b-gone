@@ -38,24 +38,24 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     else:
         model_classification = model_cls_classification(**model_kwargs)
 
-    # out of sample prediction
+    # Out of sample prediction
     if len(test_ids) != 0:
         results_classification_test = classification_metrics(model_classification.classification(web_ids=test_ids),
                                                         [GroundTruth.load(web_id).category for web_id in test_ids])
     else:
         results_classification_test = {"recall": None, "precision": None, "f1": None}
 
-    # in sample prediction
+    # In sample prediction
     if len(train_ids) != 0:
         results_classification_train = classification_metrics(model_classification.classification(web_ids=train_ids),
                                                         [GroundTruth.load(web_id).category for web_id in train_ids])
     else:
         results_classification_train = {"recall": None, "precision": None, "f1": None}
 
-    # combine results
+    # Combine results
     results = {"out of sample": results_classification_test, "in sample": results_classification_train}
 
-    # save results as MD-File
+    # Save results as MD-File
     if save_results:
         parameters = {"Model": model_cls_classification, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split, "Averaging method": AVERAGE}
