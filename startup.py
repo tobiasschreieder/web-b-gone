@@ -8,6 +8,7 @@ from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
 from extraction import StructuredTemplateExtractionModel, RandomExtractionModel, NeuralNetExtractionModel
+from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -109,14 +110,19 @@ def main():
         web_ids += ids[1:]
         train_ids += ids[:1]
 
+    '''
     struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER, 'all_doms')
     struc_temp_model.train(train_ids)
     result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
-
+    '''
     # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
     # history = ner_temp_model.train(web_ids[0:8])
     # result = ner_temp_model.extract(web_ids[8:10])
     # print(result)
+
+    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, 'text_1')
+    result = combine_model.extract(web_ids[:2])
+    print(result)
 
     pass
 

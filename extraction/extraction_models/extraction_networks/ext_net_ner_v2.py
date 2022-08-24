@@ -23,7 +23,7 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
-    def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
+    def predict(self, web_ids: List[str], k=3, **kwargs) -> List[Dict[str, List[str]]]:
         results = []
         for web_id in web_ids:
             html_text = nerHelper.get_html_text(web_id)
@@ -56,19 +56,25 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
                         elif tag == in_tag:
                             current_token += " " + str(token)
                         elif not tag == in_tag:
-                            if current_token not in id_result[in_tag]:
-                                id_result[in_tag].append(current_token)
+                            id_result[in_tag].append(current_token)
                             current_token = ""
                             in_tag = tag
                     else:
                         if in_tag:
-                            if current_token not in id_result[in_tag]:
-                                id_result[in_tag].append(current_token)
+                            id_result[in_tag].append(current_token)
                             current_token = ""
                             in_tag = False
                 if in_tag:
-                    if current_token not in id_result[in_tag]:
-                        id_result[in_tag].append(current_token)
+                    id_result[in_tag].append(current_token)
+
+                for label in id_result:
+                    if len(id_result[label]) > 3:
+                        lst_sorted = sorted([ss for ss in set(id_result[label]) if len(ss) > 0 and ss.istitle()],
+                                            key=id_result[label].count,
+                                            reverse=True)
+                        id_result[label] = lst_sorted[0:k]
+                        # id_results[label] = [max(set(id_results[label]), key=id_results[label].count)]
+
             results.append(id_result)
         return results
 

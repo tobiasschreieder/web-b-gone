@@ -22,7 +22,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         self.EMB_DIM = self.nlp.vocab.vectors_length
         self.MAX_LEN = 50
 
-    def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
+    def predict(self, web_ids: List[str], k=3, **kwargs) -> List[Dict[str, List[str]]]:
         self.load()
 
         result_list = []
@@ -45,8 +45,12 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             print(id_results)
 
             for label in id_results:
-                if len(id_results[label]) > 1:
-                    id_results[label] = [max(set(id_results[label]), key=id_results[label].count)]
+                if len(id_results[label]) > 3:
+                    lst_sorted = sorted([ss for ss in set(id_results[label]) if len(ss) > 0 and ss.istitle()],
+                                        key=id_results[label].count,
+                                        reverse=True)
+                    id_results[label] = lst_sorted[0:k]
+                    # id_results[label] = [max(set(id_results[label]), key=id_results[label].count)]
 
             result_list.append(id_results)
 
