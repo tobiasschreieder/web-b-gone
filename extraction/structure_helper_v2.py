@@ -1,9 +1,11 @@
 import dataclasses
 import logging
+import pickle
 import random
 from copy import copy
 from typing import Any, Iterable, List, Dict, Tuple, Set
 from bs4 import Tag, Comment, NavigableString, PageElement
+from pathlib import Path
 
 from classification.preprocessing import Website
 import evaluation.text_preprocessing as tp
@@ -61,6 +63,23 @@ class StructuredTemplate:
             result += f'{k.__repr__()}: {v.__repr__()}'
         result += '})'
         return result
+
+    @classmethod
+    def load(cls, path) -> 'StructuredTemplate':
+        struc_temp = cls()
+        with path.joinpath('strucTemp_train_data.pkl').open(mode='rb') as pkl:
+            struc_temp.train_data = pickle.load(pkl, fix_imports=False)
+        with path.joinpath('strucTemp_web_ids.pkl').open(mode='rb') as pkl:
+            struc_temp.web_ids = pickle.load(pkl, fix_imports=False)
+        struc_temp.log.debug(f'Loaded from disk {path}')
+        return struc_temp
+
+    def save(self, path: Path) -> None:
+        with path.joinpath('strucTemp_train_data.pkl').open(mode='wb') as pkl:
+            pickle.dump(self.train_data, pkl, fix_imports=False)
+        with path.joinpath('strucTemp_web_ids.pkl').open(mode='wb') as pkl:
+            pickle.dump(self.web_ids, pkl, fix_imports=False)
+        self.log.debug(f'Saved to disk under {path}')
 
 
 def simple_string_match(reference: str, query: str, n: int = 3) -> float:

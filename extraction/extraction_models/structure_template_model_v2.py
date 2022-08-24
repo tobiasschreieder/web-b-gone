@@ -7,6 +7,7 @@ from joblib import Parallel, delayed
 
 import evaluation.text_preprocessing as tp
 from classification.preprocessing import Category, Website
+from config import Config
 from .base_model import BaseExtractionModel
 from ..structure_helper_v2 import simple_string_match, build_text_position_mapping, \
     candidates_filter, get_longest_element, StructuredTemplate, sort_n_score_candidates, build_mapping
