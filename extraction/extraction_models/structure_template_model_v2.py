@@ -8,8 +8,8 @@ from joblib import Parallel, delayed
 import evaluation.text_preprocessing as tp
 from classification.preprocessing import Category, Website
 from .base_model import BaseExtractionModel
-from ..structure_helper_refactor import simple_string_match, build_text_position_mapping, \
-    candidates_filter, get_longest_element, StructuredTemplate, sort_n_score_candidates
+from ..structure_helper_v2 import simple_string_match, build_text_position_mapping, \
+    candidates_filter, get_longest_element, StructuredTemplate, sort_n_score_candidates, build_mapping
 
 
 class StructuredTemplateExtractionModel(BaseExtractionModel):
@@ -37,13 +37,15 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
             # html_tree = build_html_tree(body, [])
             # print_html_tree(html_tree)
             text_position_mapping = build_text_position_mapping(body)
+            # ToDo Comments are also recognized as text
+            # text_position_mapping = build_mapping(body)
 
             attr_truth = website.truth.attributes
             for key in attr_truth:
                 if key == 'category':
                     continue
 
-                self.log.debug(f'Find best match for attribute {key}')
+                # self.log.debug(f'Find best match for attribute {key}')
                 # TODO witch ground truth should be used, currently the longest
                 if len(attr_truth[key]) == 0:
                     continue
@@ -76,7 +78,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         # TODO: cluster templates
         self.template = template
 
-    def extract(self, web_ids: List[str], n_jobs: int = 1, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
+    def extract(self, web_ids: List[str], n_jobs: int = -1, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
         Extract information from websites using the structured template approach.
 
@@ -102,12 +104,13 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
             candidates = dict()
             for key in self.category.get_attribute_names():
                 filter_category = Category.get_attr_type(key)
-                candidates['key'] = candidates_filter(filter_category, text_position_mapping)
+                candidates[key] = candidates_filter(filter_category, text_position_mapping)
 
             return sort_n_score_candidates(candidates, self.template, k=k)
 
-        if len(web_ids) > 20:
-            with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
-                return parallel(delayed(extract_web_id)(web_id) for web_id in web_ids)
-        else:
-            return [extract_web_id(web_id) for web_id in web_ids]
+        return [extract_web_id(web_id) for web_id in web_ids]
+        # if len(web_ids) > 20:
+        #     with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
+        #         return parallel(delayed(extract_web_id)(web_id) for web_id in web_ids)
+        # else:
+        #     return [extract_web_id(web_id) for web_id in web_ids]

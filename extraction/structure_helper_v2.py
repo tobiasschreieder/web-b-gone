@@ -2,8 +2,10 @@ import dataclasses
 import logging
 import random
 from copy import copy
-from typing import Any, Iterable, List, Dict, Tuple
+from typing import Any, Iterable, List, Dict, Tuple, Set
+from bs4 import Tag, Comment, NavigableString, PageElement
 
+from classification.preprocessing import Website
 import evaluation.text_preprocessing as tp
 
 
@@ -23,11 +25,15 @@ class AttributeData:
 class StructuredTemplate:
     log = logging.getLogger('StrucTemp')
 
-    train_data: Dict[str, AttributeData] = {}
+    # TODO use tree rep
+
+    train_data: Dict[str, AttributeData] = dict()
+    web_ids: Set[str] = set()
 
     def add_attribute(self, attribute: str, position, text_info: List[int], web_id: str) -> None:
         attr_data = self.train_data.setdefault(attribute, AttributeData(attribute))
         attr_data.add_website(web_id, position, text_info)
+        self.web_ids.add(web_id)
 
     def get_attr_data(self, attribute: str) -> AttributeData:
         if attribute in self.train_data.keys():
@@ -92,11 +98,66 @@ def get_longest_element(iter_obj: Iterable[Any]):
     return e
 
 
-def build_text_position_mapping(section,
-                                current_pos=None,
-                                section_count: int = 0):
+@dataclasses.dataclass
+class TextPosMapping:
+    text: str
+    position: List[Tuple[int, str]]
+
+    def __getitem__(self, item):
+        if item == 'text':
+            return self.text
+        elif item == 'position':
+            return self.position
+        else:
+            raise KeyError(f'{item} is not in TextPosMapping.')
+
+
+def build_mapping(section: Tag,
+                  current_pos=None,
+                  section_count: int = 0) -> List[TextPosMapping]:
     if current_pos is None:
         current_pos = []
+
+    html_position = copy(current_pos)
+    html_position.append((section_count, section.name))
+
+    result_list = []
+
+    # tag_text = section.findAll(text=True, recursive=False)
+    # tag_text = tp.preprocess_text_html(tag_text)
+    #
+    # if not tag_text == '':
+    #     result_list.append(TextPosMapping(tag_text, html_position))
+
+    i = 0
+    for child in section.children:
+        if isinstance(child, NavigableString):
+            child: NavigableString
+            child_pos = copy(html_position)
+            child_pos.append((i, 'NavStr'))
+            text = tp.preprocess_text_html(child.text)
+
+            if text == '':
+                continue
+
+            result_list.append(TextPosMapping(text, child_pos))
+        elif isinstance(child, Comment):
+            pass
+        else:
+            if child.name in ['script']:
+                continue
+            result_list += build_mapping(child, html_position, i)
+            i += 1
+
+    return result_list
+
+
+def build_text_position_mapping(section: Tag,
+                                current_pos=None,
+                                section_count: int = 0) -> List[Any]:
+    if current_pos is None:
+        current_pos = []
+
     html_position = copy(current_pos)
     tags_to_ignore = ['script']
     children = section.find_all(recursive=False)
@@ -114,8 +175,9 @@ def build_text_position_mapping(section,
 
     temp_list = []
     if not text == "":
-        html_position.append([0, tag])
-        temp_list += [{"text": text, "position": html_position}]
+        text_pos = copy(html_position)
+        text_pos.append([0, tag])
+        temp_list += [{"text": text, "position": text_pos}]
 
     html_position.append([section_count, tag])
     section_count = 0
@@ -126,13 +188,15 @@ def build_text_position_mapping(section,
     return temp_list
 
 
-def candidates_filter(filter_category: str, text_position_mapping) -> List[str]:
+def candidates_filter(filter_category: str, text_position_mapping) -> List[Tuple[str, Any]]:
     if filter_category == 'name':
-        return [mapping['text'] for mapping in text_position_mapping if candidate_filter_name(mapping['text'])]
+        return [(mapping['text'], mapping['position'])
+                for mapping in text_position_mapping if candidate_filter_name(mapping['text'])]
     elif filter_category == 'number':
-        return [mapping['text'] for mapping in text_position_mapping if candidate_filter_number(mapping['text'])]
+        return [(mapping['text'], mapping['position'])
+                for mapping in text_position_mapping if candidate_filter_number(mapping['text'])]
     else:
-        return [mapping['text'] for mapping in text_position_mapping]
+        return [(mapping['text'], mapping['position']) for mapping in text_position_mapping]
 
 
 def candidate_filter_name(text: str) -> bool:
@@ -142,10 +206,10 @@ def candidate_filter_name(text: str) -> bool:
         return False
     if text.count(" ") > 20:
         return False
-    if any([char in text for char in ['%', '$', '!', '§', '&']]):
-        return False
-    if any(char.isdigit() for char in text):
-        return False
+    # if any([char in text for char in ['%', '$', '!', '§', '&']]):
+    #     return False
+    # if any(char.isdigit() for char in text):
+    #     return False
     return True
 
 
@@ -159,7 +223,7 @@ def candidate_filter_number(text: str) -> bool:
     return True
 
 
-def sort_n_score_candidates(candidates: Dict[str, List[str]],
+def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, Any]]],
                             template: StructuredTemplate,
                             k: int = 3) -> Dict[str, List[str]]:
     """
@@ -187,57 +251,70 @@ def sort_n_score_candidates(candidates: Dict[str, List[str]],
         Best from NAME_t2 + TEAM_t2 + HEIGHT_t2
         Best from NAME_t3 + TEAM_t3 + HEIGHT_t3
 
+        use avg over attr to compensate for missing ones
+
     --> choose best Sum and use this template and this candidate
     """
-    web_ids = template.get_web_ids()
-    best_candidate = {'score': 0,
-                      'candidate': [],
-                      'web_id': None}
-    for t in web_ids:
-        score_sum = 0
-        candidates_sum = []
-        for key in candidates:
-            attribute = key['attribute']
-            candidates_list = key['candidates']
-            row = []
-            position_t = template.get_from_web_id_and_attribute(web_id=t, attribute=attribute)['position']
-            for c in candidates_list:
-                position_c = c['position']
-                score = position_scoring(position_c, position_t)
-                row.append(score)
-            best_score_from_row = max(row)
-            best_score_candidate = row.index(best_score_from_row)
-            score_sum += best_score_from_row
+    # result_can = [(0, {'name': 'Hans Franz', 'height': '900'}, 'W855695663')]
+    result_can = []
+    for web_id in template.web_ids:
+        web_dict = dict()
+        web_score = 0
+        used_attr = 0
+        for attr in candidates.keys():
+            try:
+                web_pos = template.get_from_web_id_and_attribute(web_id, attr)['position']
+            except ValueError:
+                continue
 
-            # apply text_info
-            candidate = copy(candidates_list[best_score_candidate])
-            correct_words = candidate['text'].split(" ")
-            text_info = template.get_from_web_id_and_attribute(web_id=t, attribute=attribute)['text_info']
-            if not all(x == 1 for x in text_info):
-                # delete leading words
-                i = 0
-                while text_info[i] == 0:
-                    correct_words = correct_words[1:]
-                    i += 1
-                    if i >= len(text_info):
-                        break
-                # delete trailing words
-                i = len(text_info)
-                while text_info[i - 1] == 0:
-                    correct_words = correct_words[:-1]
-                    i -= 1
-                    if i < 0:
-                        break
-                candidate['text'] = correct_words
+            used_attr += 1
 
-            candidates_sum.append({'attribute': attribute, 'candidate': candidate})
+            best_can = (0, '')
+            best_pos = None
+            for candid in candidates[attr]:
+                candid_pos = candid[1]
+                candid_text = candid[0]
 
-        if best_candidate['score'] < score_sum:
-            best_candidate['score'] = score_sum
-            best_candidate['candidate'] = candidates_sum
-            best_candidate['web_id'] = t
+                can_score = position_scoring(candid_pos, web_pos)
+                if can_score > best_can[0]:
+                    best_can = (can_score, candid_text)
+                    best_pos = candid_pos
 
-    return best_candidate['candidate']
+            web_dict[attr] = best_can[1]
+            web_score += best_can[0]
+
+        if used_attr == 0:
+            continue
+
+        web_score = web_score / used_attr
+
+        result_can.append((web_score, web_dict, web_id))
+        result_can = sorted(result_can, key=lambda x: x[0], reverse=True)[:k]
+
+    return apply_bit_mask(result_can, template)
+
+
+def apply_bit_mask(candidates: List[Tuple[int, Dict[str, str], str]],
+                   template: StructuredTemplate) -> Dict[str, List[str]]:
+    result: Dict[str, List[str]] = dict()
+    for _, web_dict, web_id in candidates:
+        for attr in web_dict.keys():
+            bit_mask: List[int] = template.get_from_web_id_and_attribute(web_id, attr)['text_info']
+            text = web_dict[attr]
+
+            mask_sum = sum(bit_mask)
+            if mask_sum == 0:
+                text = ''
+            elif mask_sum != len(bit_mask):
+                first_word = bit_mask.index(1)
+                last_word = len(bit_mask) - bit_mask.index(0, first_word)
+                correct_text = text.split(' ')[first_word:-last_word]
+                text = ' '.join(correct_text)
+
+            result.setdefault(attr, [])
+            result[attr].append(text)
+
+    return result
 
 
 def position_scoring(position_c, position_t):
@@ -245,7 +322,7 @@ def position_scoring(position_c, position_t):
     grams = [position_c[i:i + n] for i in range(len(position_c) - n + 1)]
     # to speed-up the process
     if len(grams) > 100:
-        grams = random.sample(list, 50)
+        grams = random.sample(grams, 50)
 
     score = abs(len(position_c) - len(position_t)) * (-2)
     without_position_t = [x[1] for x in position_t]

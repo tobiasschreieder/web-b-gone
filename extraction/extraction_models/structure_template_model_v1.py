@@ -8,7 +8,7 @@ from joblib import Parallel, delayed
 import evaluation.text_preprocessing as tp
 from classification.preprocessing import Category, Website
 from .base_model import BaseExtractionModel
-from ..structure_helper import simple_string_match, build_text_position_mapping, candidates_filter, find_best_candidate
+from ..structure_helper_v1 import simple_string_match, build_text_position_mapping, candidates_filter, find_best_candidate
 
 
 class StructuredTemplate:
