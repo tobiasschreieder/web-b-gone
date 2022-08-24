@@ -12,13 +12,15 @@ AVERAGE = "macro"  # determines the type of averaging performed on the data, cho
 def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
                             train_test_split: float,
                             max_size: int = -1,
-                            split_type: str = "website", **model_kwargs) -> Dict[str, Dict[str, float]]:
+                            split_type: str = "website",
+                            save_results: bool = True, **model_kwargs) -> Dict[str, Dict[str, float]]:
     """
     Evaluate a given classification model
     :param model_cls_classification: Classification model which should be used
     :param train_test_split: Specify proportion of train data [0; 1]
     :param max_size: Size of sample which should be used, -1 -> all data will be used
     :param split_type: String to define Split-Type, Choose between "website" and "domain"
+    :param save_results: Boolean -> Set to False if no MD-File should be created
     :param model_kwargs:
     :return: Dictionary with calculated metric scores
     """
@@ -50,7 +52,14 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     else:
         results_classification_train = {"recall": None, "precision": None, "f1": None}
 
+    # combine results
     results = {"out of sample": results_classification_test, "in sample": results_classification_train}
+
+    # save results as MD-File
+    if save_results:
+        parameters = {"Model": model_cls_classification, "Data-split": split_type,
+                      "Size dataset": max_size, "Train-Test-Split": train_test_split, "Averaging method": AVERAGE}
+        create_md_file(results=results, parameters=parameters)
 
     return results
 
@@ -139,3 +148,49 @@ def classification_metrics(pred: List[Category], truth: List[Category]) -> Dict[
     results = {"recall": recall, "precision": precision, "f1": f1}
 
     return results
+
+
+def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, str], name: str = "",
+                   path: str = "working/"):
+    """
+    Create MD-File for extraction results
+    :param results: Dictionary with calculated results from extraction model
+    :param parameters: Dictionary with all parameter that should be listed in file
+    :param name: String with name of considered model
+    :param path: String with path to save MD-File
+    """
+    # Header
+    text = list()
+    text.append("# Evaluation Classification")
+    if len(parameters) != 0:
+        text.append("## Parameters:")
+        for k, v in parameters.items():
+            text.append("* " + str(k) + ": " + str(v))
+
+    # In-sample prediction
+    text.append("## In-sample Prediction:")
+    text.append("| Metric | Result |")
+    text.append("|---|---|")
+    text.append("| Recall | " + str(results["in sample"]["recall"]) + " |")
+    text.append("| Precision | " + str(results["in sample"]["precision"]) + " |")
+    text.append("| F1 | " + str(results["in sample"]["f1"]) + " |")
+
+    # Out-of-sample prediction
+    text.append("## Out-of-sample Prediction:")
+    text.append("| Metric | Result |")
+    text.append("|---|---|")
+    text.append("| Recall | " + str(results["out of sample"]["recall"]) + " |")
+    text.append("| Precision | " + str(results["out of sample"]["precision"]) + " |")
+    text.append("| F1 | " + str(results["out of sample"]["f1"]) + " |")
+
+    # Specify path and file-name
+    save_name = "classification_results"
+    if name != "":
+        save_name += "_" + name
+    save_name = path + save_name + ".md"
+
+    # Save MD-File
+    with open(save_name, 'w') as f:
+        for item in text:
+            f.write("%s\n" % item)
+

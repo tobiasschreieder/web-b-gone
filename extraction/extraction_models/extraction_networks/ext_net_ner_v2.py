@@ -29,7 +29,7 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
             attributes_dict.pop('category')
             attributes = []
             for attr in attributes_dict:
-                attributes.append(attr.upper())
+                attributes.append(attr)
 
             schema = ['_'] + sorted(attributes + ['O'])
             X_pred = self.preprocess_predict(html_text)
@@ -39,7 +39,7 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
             y_pred = np.argmax(y_probs, axis=-1)
             id_result = {}
             for attr in attributes:
-                id_result[str(attr).upper()] = []
+                id_result[str(attr)] = []
             for sentence, tag_pred in zip(html_text, y_pred):
                 in_tag = False
                 current_token = ""

@@ -92,37 +92,28 @@ def main():
 
     # results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
     #                                                                 train_test_split=0.7,
-    #                                                                 max_size=1000,
+    #                                                                 max_size=10000,
     #                                                                 split_type="website")
     # log.info(results_classification)
 
-    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=RandomExtractionModel,
-    #                                                     category=Category.BOOK,
-    #                                                     train_test_split=0.7,
-    #                                                     max_size=1000,
-    #                                                     split_type="website")
-    # log.info(results_extraction)
-
-    '''
     results_extraction = extraction.evaluate_extraction(model_cls_extraction=NeuralNetExtractionModel,
                                                         category=Category.NBA_PLAYER,
                                                         train_test_split=0.7,
                                                         max_size=10,
                                                         split_type="website",
-                                                        **{"name": "text_1", "version": "NerV2"})
-    print(results_extraction)
-    '''
+                                                        **{"name": "text_2", "version": "NerV2"})
+    log.info(results_extraction)
 
-    web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
+    # web_ids = Website.get_website_ids(max_size=10, categories=Category.NBA_PLAYER)
 
     # struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER)
     # struc_temp_model.train(web_ids[0:5])
     # result = struc_temp_model.extract(web_ids[5:10])
 
-    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_2', 'NerV2')
-    ner_temp_model.train(web_ids[0:8])
-    result = ner_temp_model.extract(web_ids[8:10])
-    print(result)
+    # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
+    # history = ner_temp_model.train(web_ids[0:8])
+    # result = ner_temp_model.extract(web_ids[8:10])
+    # print(result)
 
     pass
 
