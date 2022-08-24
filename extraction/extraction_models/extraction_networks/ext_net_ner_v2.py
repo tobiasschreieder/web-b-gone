@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict
 
 import numpy as np
@@ -12,6 +13,8 @@ from .base_extraction_network import BaseExtractionNetwork
 
 
 class ExtractionNetworkNerV2(BaseExtractionNetwork):
+
+    log = logging.getLogger('ExtNet-NerV2')
 
     def __init__(self, name: str, **kwargs):
         super().__init__(name=name, version='NerV2',
