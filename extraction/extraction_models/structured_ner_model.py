@@ -88,7 +88,7 @@ class CombinedExtractionModel(BaseExtractionModel):
                             id_result[attr].append(candiate_struc)
                             continue
                 if not id_result[attr]:
-                    id_result[attr].append(ner_result)
+                    id_result[attr] = ner_result
 
             if good_matches > len(id_result_ner)/2:
                 new_dict = {}
