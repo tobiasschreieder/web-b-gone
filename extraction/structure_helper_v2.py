@@ -4,14 +4,13 @@ import pickle
 import random
 from copy import copy
 from typing import Any, Iterable, List, Dict, Tuple, Set
-from bs4 import Tag, Comment, NavigableString, PageElement
+from bs4 import Tag, Comment, NavigableString, BeautifulSoup
 from pathlib import Path
 
-from classification.preprocessing import Website
 import evaluation.text_preprocessing as tp
+from classification.preprocessing import Website, Category
+from utils import get_threading_logger
 
-
-# TODO: refactor names and write doc
 
 @dataclasses.dataclass
 class AttributeData:
@@ -26,8 +25,6 @@ class AttributeData:
 
 class StructuredTemplate:
     log = logging.getLogger('StrucTemp')
-
-    # TODO use tree rep
 
     train_data: Dict[str, AttributeData] = dict()
     web_ids: Set[str] = set()
@@ -81,6 +78,77 @@ class StructuredTemplate:
             pickle.dump(self.web_ids, pkl, fix_imports=False)
         self.log.debug(f'Saved to disk under {path}')
 
+    def extract(self, web_ids: str, category: Category, k: int = 3) -> Dict[str, List[str]]:
+        result = []
+        for web_id in web_ids:
+            website = Website.load(web_id)
+            get_threading_logger('StrucTempExtModel').debug(f'Extract for web_id {web_id}')
+            with Path(website.file_path).open(encoding='utf-8') as htm_file:
+                soup = BeautifulSoup(htm_file, features="html.parser")
+
+            body = soup.find('body')
+            # html_tree = build_html_tree(body, [])
+            # print_html_tree(html_tree)
+            text_position_mapping = build_text_position_mapping(body)
+
+            candidates = dict()
+            for key in category.get_attribute_names():
+                filter_category = Category.get_attr_type(key)
+                candidates[key] = candidates_filter(filter_category, text_position_mapping)
+
+            result.append(sort_n_score_candidates(candidates, self, k=k))
+        return result
+
+    def train(self, web_ids: List[str]) -> None:
+        for web_id in web_ids:
+            self.log.debug(f'Start learning from web_id {web_id}')
+            website = Website.load(web_id)
+            with Path(website.file_path).open(encoding='utf-8') as htm_file:
+                soup = BeautifulSoup(htm_file, features="html.parser")
+
+            body = soup.find('body')
+            # html_tree = build_html_tree(body, [])
+            # print_html_tree(html_tree)
+            text_position_mapping = build_text_position_mapping(body)
+            # ToDo Comments are also recognized as text
+            # text_position_mapping = build_mapping(body)
+
+            attr_truth = website.truth.attributes
+            for key in attr_truth:
+                if key == 'category':
+                    continue
+
+                # self.log.debug(f'Find best match for attribute {key}')
+                # TODO witch ground truth should be used, currently the longest
+                if len(attr_truth[key]) == 0:
+                    continue
+
+                prep_text = str(tp.preprocess_text_html(get_longest_element(attr_truth[key])))
+                best_match = 0
+                best_position = None
+                for mapping in text_position_mapping:
+                    match = simple_string_match(mapping['text'], prep_text)
+                    if match > best_match:
+                        best_match = match
+                        text_correct = prep_text.split(" ")
+                        text_found = str(mapping['text']).split(" ")
+                        text_info = [0] * len(text_found)
+                        for correct_word in text_correct:
+                            if correct_word in text_found:
+                                pos = text_found.index(correct_word)
+                                text_info[pos] = 1
+
+                        best_position = {'attribute': key,
+                                         'position': mapping['position'],
+                                         'text_info': text_info}
+                if best_match == 0:
+                    continue
+
+                self.add_attribute(attribute=best_position['attribute'],
+                                   position=best_position['position'],
+                                   text_info=best_position['text_info'],
+                                   web_id=web_id)
+
 
 def simple_string_match(reference: str, query: str, n: int = 3) -> float:
     """
@@ -94,7 +162,7 @@ def simple_string_match(reference: str, query: str, n: int = 3) -> float:
 
     # to speed up the process
     if len(grams) > 100:
-        grams = random.sample(grams, 50)  # TODO Before was list? cant be right
+        grams = random.sample(grams, 50)
 
     matches = 0
     for gram in grams:
@@ -284,12 +352,12 @@ def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, Any]]],
             try:
                 web_pos = template.get_from_web_id_and_attribute(web_id, attr)['position']
             except ValueError:
+                web_dict[attr] = ''
                 continue
 
             used_attr += 1
 
             best_can = (0, '')
-            best_pos = None
             for candid in candidates[attr]:
                 candid_pos = candid[1]
                 candid_text = candid[0]
@@ -297,7 +365,6 @@ def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, Any]]],
                 can_score = position_scoring(candid_pos, web_pos)
                 if can_score > best_can[0]:
                     best_can = (can_score, candid_text)
-                    best_pos = candid_pos
 
             web_dict[attr] = best_can[1]
             web_score += best_can[0]
@@ -318,8 +385,13 @@ def apply_bit_mask(candidates: List[Tuple[int, Dict[str, str], str]],
     result: Dict[str, List[str]] = dict()
     for _, web_dict, web_id in candidates:
         for attr in web_dict.keys():
-            bit_mask: List[int] = template.get_from_web_id_and_attribute(web_id, attr)['text_info']
             text = web_dict[attr]
+            if len(text) == 0:
+                result.setdefault(attr, [])
+                result[attr].append(text)
+                continue
+
+            bit_mask: List[int] = template.get_from_web_id_and_attribute(web_id, attr)['text_info']
 
             mask_sum = sum(bit_mask)
             if mask_sum == 0:

@@ -95,12 +95,12 @@ def main():
     #                                                                 split_type="website")
     # log.info(results_classification)
 
-    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=NeuralNetExtractionModel,
+    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
     #                                                     category=Category.NBA_PLAYER,
-    #                                                     train_test_split=0.7,
+    #                                                     train_test_split=0.5,
     #                                                     max_size=50,
     #                                                     split_type="website",
-    #                                                     **{"name": "text_1", "version": "NerV1"})
+    #                                                     **{"name": "stuc_1", })
     # log.info(results_extraction)
 
     web_ids = []
@@ -110,18 +110,18 @@ def main():
         web_ids += ids[1:]
         train_ids += ids[:1]
 
-    '''
-    struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER, 'all_doms')
-    struc_temp_model.train(train_ids)
-    result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
-    '''
+    # struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER, 'all_doms')
+    # # struc_temp_model.train(train_ids)
+    # result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
+    # print(f'{len(result)}, {len(web_ids)}')
+
     ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
     history = ner_temp_model.train(web_ids)
     result = ner_temp_model.extract(train_ids)
     print(result)
 
     '''
-    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, 'text_1')
+    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, 'text_1', 'stuc_1')
     result = combine_model.extract(web_ids[:2])
     print(result)
     '''

@@ -18,36 +18,29 @@ class CombinedExtractionModel(BaseExtractionModel):
     log = logging.getLogger('CombinedExtModel')
 
     dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/'))
-    name: str
+    ner_name: str
+    struc_name: str
 
-    def __init__(self, category: Category, name: str):
+    def __init__(self, category: Category, ner_name: str, struc_name: str):
         super().__init__(category)
-        self.name = 'all_doms'
-        self.ner_network = ExtractionNetwork.get('NerV1')(name)
+        self.ner_name = ner_name
+        self.ner_name = 'all_doms'
+        self.struc_name = struc_name
+        self.struc_name = 'all_doms'
+        self.ner_network = ExtractionNetwork.get('NerV1')(self.ner_name)
         self.template = None
-        self.dir_path = self.dir_path.joinpath('strucTemp').joinpath(self.name)
+        self.dir_path = self.dir_path.joinpath('strucTemp').joinpath(self.struc_name)
         self.dir_path.mkdir(parents=True, exist_ok=True)
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """
-        Learn from the given website ids.
+        Method not implemented for CombinedExtractionModel.
 
         :param web_ids: Website ids to learn the template from.
         :return: None
         """
-        for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
-
-        self.template = StructuredTemplate.load(self.dir_path)
-
-        # do Stuff
-
-        self.ner_network.train(web_ids)
-
-        # do Stuff
-
-        self.ner_network.save()
-        self.template.save(self.dir_path)
+        raise NotImplementedError(f'CombinedExtractionModel needs pretrained models of '
+                                  f'StructuredTemplate and ExtractionNetwork version: NerV2 to work. ')
 
     def extract(self, web_ids: List[str], n_jobs: int = -1, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
@@ -67,7 +60,7 @@ class CombinedExtractionModel(BaseExtractionModel):
         print(web_ids)
         ner_result = self.ner_network.predict(web_ids)
         print("NER:", ner_result)
-        structure_result = self.template.extract(web_ids)
+        structure_result = self.template.extract(web_ids, self.category, k=k)
         print("STRUCTURE:", structure_result)
 
         # wenn bei mehr als 50% ein Overlap, dann nimm komplpett struc-Modell
