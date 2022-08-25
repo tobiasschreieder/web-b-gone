@@ -1,12 +1,16 @@
-import copy
 from typing import List, Dict
+import copy
+import logging
 
-from classification.preprocessing import GroundTruth, Website
+from classification.preprocessing import GroundTruth, Website, Category
+
+log = logging.getLogger('Extraction')
 
 
-def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "working/", data=None):
+def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "working/", data=None, category=None):
     """
     Run exploratory data analysis
+    :param category: Category of given data
     :param data: List with dataset that contains extraction results of a model
     :param path: String with path to save MD-File
     :param name: String with name of considered dataset
@@ -17,7 +21,8 @@ def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "w
         web_ids: List[str] = Website.get_website_ids(max_size=max_size, rdm_sample=True, seed='eval_class')
         ground_truth = [GroundTruth.load(web_id).attributes for web_id in web_ids]
     else:
-        ground_truth = data
+        prediction = copy.deepcopy(data)
+        ground_truth = append_category(data=prediction, category=category)
 
     # Create datastructures to save later calculated metrics
     dictionary = get_dictionary(ground_truth=ground_truth)
@@ -36,6 +41,19 @@ def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "w
     # Save metrics as MD-File
     eda = [length_dict, token_dict, solution_dict, missing_dict]
     create_eda_md_table(eda=eda, name=name, path=path)
+
+
+def append_category(data: List[Dict[str, List[str]]], category: Category) -> List[Dict[str, List[str]]]:
+    """
+    Append category to datastructure of model prediction
+    :param data: List with datastructure of model prediction
+    :param category: Category to append
+    :return: expanded List
+    """
+    for i in range(0, len(data)):
+        data[i].setdefault("category", str(category))
+
+    return data
 
 
 def get_dictionary(ground_truth: List[Dict[str, List[str]]]) -> Dict[str, Dict[str, float]]:
@@ -244,7 +262,12 @@ def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]], name: str, path:
     save_name = path + save_name + ".md"
 
     # Save MD-File
-    with open(save_name, 'w') as f:
-        for item in text:
-            f.write("%s\n" % item)
-
+    try:
+        with open(save_name, 'w') as f:
+            for item in text:
+                f.write("%s\n" % item)
+    except FileNotFoundError:
+        with open("working/extraction_results.md", 'w') as f:
+            for item in text:
+                f.write("%s\n" % item)
+        log.info("FileNotFoundError: extraction_results.md saved at /working")

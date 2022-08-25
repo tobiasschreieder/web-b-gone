@@ -2,7 +2,7 @@ from typing import List, Dict, Type, Tuple
 import logging
 
 from classification.preprocessing import Category, GroundTruth, Website
-from evaluation import comparison, text_preprocessing
+from evaluation import comparison, text_preprocessing, dataset
 from extraction.extraction_models import BaseExtractionModel
 from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
 
@@ -40,16 +40,20 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         model_extraction.train(train_ids)
 
     # Out of sample prediction
+    prediction_oos = list()
     if len(test_ids) != 0:
-        results_extraction_test = extraction_metrics(model_extraction.extract(web_ids=test_ids),
+        prediction_oos = model_extraction.extract(web_ids=test_ids)
+        results_extraction_test = extraction_metrics(prediction_oos,
                                                      [GroundTruth.load(web_id).attributes for web_id in test_ids])
     else:
         results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
                                    "f1_top_1": None, "f1_top_3": None}
 
     # In sample prediction
+    prediction_is = list()
     if len(train_ids) != 0:
-        results_extraction_train = extraction_metrics(model_extraction.extract(web_ids=train_ids),
+        prediction_is = model_extraction.extract(web_ids=train_ids)
+        results_extraction_train = extraction_metrics(prediction_is,
                                                       [GroundTruth.load(web_id).attributes for web_id in train_ids])
     else:
         results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
@@ -58,8 +62,9 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     # Combine results
     results = {"out of sample": results_extraction_test, "in sample": results_extraction_train}
 
-    # Save results as MD-File
+    # Save results
     if save_results:
+        # Save results as MD-File
         parameters = {"Model": model_cls_extraction, "Category": category, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split, "Seed": SEED}
         for k, v in model_kwargs.items():
@@ -73,6 +78,10 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
             path += model_kwargs["name"] + "/"
 
         create_md_file(results=results, parameters=parameters, path=path)
+
+        # EDA of prediction
+        if len(prediction_oos) != 0:
+            dataset.exploratory_data_analysis(name="prediction", path=path, data=prediction_oos, category=category)
 
     return results
 
