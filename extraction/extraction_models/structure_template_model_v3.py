@@ -5,16 +5,19 @@ from typing import List, Dict
 from classification.preprocessing import Category
 from config import Config
 from .base_model import BaseExtractionModel
-from ..structure_helper_v2 import StructuredTemplate
+from ..structure_tree_template import StructuredTreeTemplate
 
 cfg = Config.get()
 
+# TODO boilerplate with regex search after -nav nav nav-, ggf header
+# TODO update build_mapping so no comments are returned
 
-class StructuredTemplateExtractionModel(BaseExtractionModel):
-    template: StructuredTemplate
-    log = logging.getLogger('StrucTempExtModel')
 
-    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/strucTemp/'))
+class StructuredTreeTemplateExtractionModel(BaseExtractionModel):
+    template: StructuredTreeTemplate
+    log = logging.getLogger('StrucTreeTempExtModel')
+
+    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/strucTreeTemp/'))
     name: str
 
     def __init__(self, category: Category, name: str):
@@ -31,7 +34,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         :param web_ids: Website ids to learn the template from.
         :return: None
         """
-        template = StructuredTemplate()
+        template = StructuredTreeTemplate()
         template.train(web_ids)
         self.template = template
         self.template.save(self.dir_path)
@@ -48,12 +51,6 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         :return: Extracted information
         """
         if self.template is None:
-            self.template = StructuredTemplate.load(self.dir_path)
+            self.template = StructuredTreeTemplate.load(self.dir_path)
 
         return self.template.extract(web_ids, self.category, k=k)
-        # if len(web_ids) > 20:
-        #     with Parallel(n_jobs=n_jobs, verbose=2) as parallel:
-        #         data = parallel(delayed(extract_web_id)(web_id) for web_id in web_ids)
-        # else:
-        #     data = [extract_web_id(web_id) for web_id in web_ids]
-        # return data

@@ -1,3 +1,4 @@
 from extraction.extraction_models.neural_net_model import NeuralNetExtractionModel
 from extraction.extraction_models.random_model import RandomExtractionModel
 from extraction.extraction_models.structure_template_model_v2 import StructuredTemplateExtractionModel
+from extraction.extraction_models.structure_template_model_v3 import StructuredTreeTemplateExtractionModel

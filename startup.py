@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 import pathlib
 from typing import Any, Dict
@@ -7,7 +8,8 @@ from classification.category_models import RandomCategoryModel
 from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
-from extraction import StructuredTemplateExtractionModel, RandomExtractionModel, NeuralNetExtractionModel
+from extraction import StructuredTemplateExtractionModel, RandomExtractionModel, NeuralNetExtractionModel, \
+    StructuredTreeTemplateExtractionModel
 from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
 from utils import setup_logger_handler
 
@@ -95,25 +97,42 @@ def main():
     #                                                                 split_type="website")
     # log.info(results_classification)
 
-    # results_extraction = extraction.evaluate_extraction(model_cls_extraction=StructuredTemplateExtractionModel,
-    #                                                     category=Category.NBA_PLAYER,
-    #                                                     train_test_split=0.5,
-    #                                                     max_size=50,
-    #                                                     split_type="website",
-    #                                                     **{"name": "stuc_1", })
+    # then = datetime.datetime.now()
+    # results_extraction = extraction.evaluate_extraction(
+    #     model_cls_extraction=StructuredTemplateExtractionModel,
+    #     category=Category.NBA_PLAYER,
+    #     train_test_split=0.25,
+    #     max_size=400,
+    #     split_type="website",
+    #     **{"name": "stuc_1", }
+    # )
+    middel = datetime.datetime.now()
+    results_extraction_tree = extraction.evaluate_extraction(
+        model_cls_extraction=StructuredTreeTemplateExtractionModel,
+        category=Category.NBA_PLAYER,
+        train_test_split=0.25,
+        max_size=4000,
+        split_type="website",
+        **{"name": "stucTree_3", }
+    )
+    now = datetime.datetime.now()
+    # log.info(f'Took {middel - then} for v2')
+    log.info(f'Took {now - middel} for v3')
     # log.info(results_extraction)
+    log.info(results_extraction_tree)
+    extraction.create_md_file(results_extraction_tree, {}, 'strucTree_4000')
 
-    web_ids = []
-    train_ids = []
-    for dom in Website.get_all_domains(Category.NBA_PLAYER):
-        ids = Website.get_website_ids(max_size=3, categories=Category.NBA_PLAYER, domains=dom)
-        web_ids += ids[1:]
-        train_ids += ids[:1]
-
-    # struc_temp_model = StructuredTemplateExtractionModel(Category.NBA_PLAYER, 'all_doms')
-    # # struc_temp_model.train(train_ids)
+    # web_ids = []
+    # train_ids = []
+    # for dom in Website.get_all_domains(Category.NBA_PLAYER):
+    #     ids = Website.get_website_ids(max_size=3, categories=Category.NBA_PLAYER, domains=dom)
+    #     web_ids += ids[1:]
+    #     train_ids += ids[:1]
+    #
+    # struc_temp_model = StructuredTreeTemplateExtractionModel(Category.NBA_PLAYER, 'tree_v1')
+    # struc_temp_model.train(train_ids)
     # result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
-    # print(f'{len(result)}, {len(web_ids)}')
+
     '''
     ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
     history = ner_temp_model.train(web_ids)
@@ -121,9 +140,9 @@ def main():
     print(result)
     '''
 
-    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
-    result = combine_model.extract(web_ids[:2])
-    print(result)
+    # combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
+    # result = combine_model.extract(web_ids[:2])
+    # print(result)
 
     pass
 
