@@ -23,7 +23,7 @@ class CombinedExtractionModel(BaseExtractionModel):
     def __init__(self, category: Category, name: str):
         super().__init__(category)
         self.name = 'all_doms'
-        self.ner_network = ExtractionNetwork.get('NerV2')(name)
+        self.ner_network = ExtractionNetwork.get('NerV1')(name)
         self.template = None
         self.dir_path = self.dir_path.joinpath('strucTemp').joinpath(self.name)
         self.dir_path.mkdir(parents=True, exist_ok=True)

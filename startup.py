@@ -106,7 +106,7 @@ def main():
     web_ids = []
     train_ids = []
     for dom in Website.get_all_domains(Category.NBA_PLAYER):
-        ids = Website.get_website_ids(max_size=5, categories=Category.NBA_PLAYER, domains=dom)
+        ids = Website.get_website_ids(max_size=3, categories=Category.NBA_PLAYER, domains=dom)
         web_ids += ids[1:]
         train_ids += ids[:1]
 
@@ -115,14 +115,16 @@ def main():
     struc_temp_model.train(train_ids)
     result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
     '''
-    # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
-    # history = ner_temp_model.train(web_ids[0:8])
-    # result = ner_temp_model.extract(web_ids[8:10])
-    # print(result)
+    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
+    history = ner_temp_model.train(web_ids)
+    result = ner_temp_model.extract(train_ids)
+    print(result)
 
+    '''
     combine_model = CombinedExtractionModel(Category.NBA_PLAYER, 'text_1')
     result = combine_model.extract(web_ids[:2])
     print(result)
+    '''
 
     pass
 

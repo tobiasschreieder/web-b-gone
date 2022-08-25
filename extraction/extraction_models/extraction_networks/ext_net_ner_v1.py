@@ -57,12 +57,13 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         return result_list
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 100
+        epochs = 30
         batch_size = 16
 
         training_data = {'classes': [], 'annotations': []}
         for web_id in web_ids:
             html_text = nerHelper.get_html_text(web_id)
+            print("html_text: ", html_text)
 
             website = Website.load(web_id)
             attributes = website.truth.attributes

@@ -70,12 +70,16 @@ def html_text_to_spacy(html_text, attributes):
     for attr, value in attributes.items():
         if value and isinstance(value, list):
             value = value[0]
-            value_list = value.split(" ")
-        elif isinstance(value, str):
-            value_list = value.split(" ")
+        elif value:
+            pass
         else:
             print("nothing there", attr, value)
             continue
+        value = value.strip()
+        value = value.replace("  ", " ")
+        value = value.replace("\t", " ")
+        value_list = value.split(" ")
+        print(attr, ":", value)
         indices = [i for i, x in enumerate(text_list) if x == value_list[0]]
         for i in indices:
             if text_list[i:i+len(value_list)] == value_list:
@@ -83,4 +87,5 @@ def html_text_to_spacy(html_text, attributes):
                 pos = i + len(value_list)
                 end_index = sum(text_len_list[:pos]) + len(text_len_list[:pos]) - 1
                 entities.append((start_index, end_index, attr))
+        print({'text': text, 'entities': entities})
     return {'text': text, 'entities': entities}
