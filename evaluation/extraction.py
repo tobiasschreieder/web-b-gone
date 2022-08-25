@@ -4,8 +4,11 @@ import logging
 from classification.preprocessing import Category, GroundTruth, Website
 from evaluation import comparison, text_preprocessing
 from extraction.extraction_models import BaseExtractionModel
+from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
 
 log = logging.getLogger('Extraction')
+
+SEED = "eval_class"  # Seed to Load data sample
 
 
 def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
@@ -31,10 +34,10 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     train_ids, test_ids = split_data(category=category, train_test_split=train_test_split, split_type=split_type,
                                      max_size=max_size)
 
-    # Extraction
     model_extraction: BaseExtractionModel
     model_extraction = model_cls_extraction(category, **model_kwargs)
-    model_extraction.train(train_ids)
+    if model_cls_extraction != CombinedExtractionModel:
+        model_extraction.train(train_ids)
 
     # Out of sample prediction
     if len(test_ids) != 0:
@@ -58,7 +61,9 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     # Save results as MD-File
     if save_results:
         parameters = {"Model": model_cls_extraction, "Category": category, "Data-split": split_type,
-                      "Size dataset": max_size, "Train-Test-Split": train_test_split}
+                      "Size dataset": max_size, "Train-Test-Split": train_test_split, "Seed": SEED}
+        for k, v in model_kwargs.items():
+            parameters.setdefault(str(k).capitalize(), str(v))
 
         path = "working/"
         if "name" in model_kwargs:
@@ -72,22 +77,21 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     return results
 
 
-def split_data(category: Category, train_test_split: float, split_type: str, max_size: int = -1,
-               seed: str = "eval_class") -> Tuple[List[str], List[str]]:
+def split_data(category: Category, train_test_split: float, split_type: str,
+               max_size: int = -1) -> Tuple[List[str], List[str]]:
     """
     Method to split dataset with defined split-type
     :param category: Category that should be considered
     :param train_test_split: Specify proportion of train data [0; 1]
     :param split_type: String to define Split-Type, Choose between "website" and "domain"
     :param max_size: Size of sample which should be used, -1 -> all data will be used
-    :param seed: String with seed
     :return: Tuple with train-ids and test-ids
     """
     train_ids = list()
     test_ids = list()
 
     if split_type == "website":
-        web_ids: List[str] = Website.get_website_ids(max_size=max_size, categories=category, rdm_sample=True, seed=seed)
+        web_ids: List[str] = Website.get_website_ids(max_size=max_size, categories=category, rdm_sample=True, seed=SEED)
 
         split_index = int(len(web_ids) * train_test_split)
         train_ids = web_ids[:split_index]
@@ -99,11 +103,11 @@ def split_data(category: Category, train_test_split: float, split_type: str, max
         train_domains = domains[:split_index]
         test_domains = domains[split_index:]
 
-        train_ids += Website.get_website_ids(max_size=int(max_size * train_test_split), rdm_sample=True, seed=seed,
+        train_ids += Website.get_website_ids(max_size=int(max_size * train_test_split), rdm_sample=True, seed=SEED,
                                              categories=category, domains=train_domains)
 
         test_ids += Website.get_website_ids(max_size=int(max_size * (1 - train_test_split)), rdm_sample=True,
-                                            seed=seed, categories=category, domains=test_domains)
+                                            seed=SEED, categories=category, domains=test_domains)
 
     else:
         return [], []

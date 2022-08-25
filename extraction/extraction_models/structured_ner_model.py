@@ -70,7 +70,7 @@ class CombinedExtractionModel(BaseExtractionModel):
                 structure_result = id_result_struct[attr]
                 id_result[attr] = []
                 for score, candiate_struc in structure_result:
-                    if not candiate_struc or score > EPSILON:
+                    if not candiate_struc or score < EPSILON:
                         continue
                     if isinstance(candiate_struc, str):
                         candiate_struc = text_preprocessing.preprocess_text_html(candiate_struc)
