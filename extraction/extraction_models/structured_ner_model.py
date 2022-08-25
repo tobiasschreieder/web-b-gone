@@ -60,7 +60,7 @@ class CombinedExtractionModel(BaseExtractionModel):
         print(web_ids)
         ner_result = self.ner_network.predict(web_ids)
         print("NER:", ner_result)
-        structure_result = self.template.extract(web_ids, self.category, k=k)
+        structure_result = self.template.extract(web_ids, self.category, k=k, with_score=True)
         print("STRUCTURE:", structure_result)
 
         # wenn bei mehr als 50% ein Overlap, dann nimm komplpett struc-Modell

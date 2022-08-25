@@ -3,7 +3,7 @@ import logging
 import pickle
 import random
 from copy import copy
-from typing import Any, Iterable, List, Dict, Tuple, Set
+from typing import Any, Iterable, List, Dict, Tuple, Set, Union
 from bs4 import Tag, Comment, NavigableString, BeautifulSoup
 from pathlib import Path
 
@@ -78,7 +78,8 @@ class StructuredTemplate:
             pickle.dump(self.web_ids, pkl, fix_imports=False)
         self.log.debug(f'Saved to disk under {path}')
 
-    def extract(self, web_ids: str, category: Category, k: int = 3) -> Dict[str, List[str]]:
+    def extract(self, web_ids: str, category: Category, k: int = 3,
+                with_score: bool = False) -> List[Dict[str, Union[List[str], List[Tuple[int, str]]]]]:
         result = []
         for web_id in web_ids:
             website = Website.load(web_id)
@@ -96,7 +97,7 @@ class StructuredTemplate:
                 filter_category = Category.get_attr_type(key)
                 candidates[key] = candidates_filter(filter_category, text_position_mapping)
 
-            result.append(sort_n_score_candidates(candidates, self, k=k))
+            result.append(sort_n_score_candidates(candidates, self, k=k, with_score=with_score))
         return result
 
     def train(self, web_ids: List[str]) -> None:
@@ -311,8 +312,8 @@ def candidate_filter_number(text: str) -> bool:
 
 
 def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, Any]]],
-                            template: StructuredTemplate,
-                            k: int = 3) -> Dict[str, List[str]]:
+                            template: StructuredTemplate, k: int = 3,
+                            with_score: bool = False) -> Dict[str, Union[List[str], List[Tuple[int, str]]]]:
     """
          c1, c2, c3  c4  (NAME)
     t1 [ .   .   .   . ]
@@ -377,18 +378,22 @@ def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, Any]]],
         result_can.append((web_score, web_dict, web_id))
         result_can = sorted(result_can, key=lambda x: x[0], reverse=True)[:k]
 
-    return apply_bit_mask(result_can, template)
+    return apply_bit_mask(result_can, template, with_score=with_score)
 
 
 def apply_bit_mask(candidates: List[Tuple[int, Dict[str, str], str]],
-                   template: StructuredTemplate) -> Dict[str, List[str]]:
+                   template: StructuredTemplate,
+                   with_score: bool = False) -> Dict[str, Union[List[str], List[Tuple[int, str]]]]:
     result: Dict[str, List[str]] = dict()
-    for _, web_dict, web_id in candidates:
+    for web_score, web_dict, web_id in candidates:
         for attr in web_dict.keys():
+            result.setdefault(attr, [])
             text = web_dict[attr]
             if len(text) == 0:
-                result.setdefault(attr, [])
-                result[attr].append(text)
+                if with_score:
+                    result[attr].append((web_score, text))
+                else:
+                    result[attr].append(text)
                 continue
 
             bit_mask: List[int] = template.get_from_web_id_and_attribute(web_id, attr)['text_info']
@@ -402,8 +407,10 @@ def apply_bit_mask(candidates: List[Tuple[int, Dict[str, str], str]],
                 correct_text = text.split(' ')[first_word:-last_word]
                 text = ' '.join(correct_text)
 
-            result.setdefault(attr, [])
-            result[attr].append(text)
+            if with_score:
+                result[attr].append((web_score, text))
+            else:
+                result[attr].append(text)
 
     return result
 
