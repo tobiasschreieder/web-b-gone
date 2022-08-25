@@ -42,8 +42,6 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
             for ent in doc.ents:
                 id_results[ent.label_].append(ent.text)
 
-            print(id_results)
-
             for label in id_results:
                 if len(id_results[label]) > 3:
                     lst_sorted = sorted([ss for ss in set(id_results[label]) if len(ss) > 0 and ss.istitle()],
@@ -57,7 +55,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         return result_list
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 30
+        epochs = 100
         batch_size = 16
 
         training_data = {'classes': [], 'annotations': []}
