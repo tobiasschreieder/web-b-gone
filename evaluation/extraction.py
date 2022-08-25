@@ -1,8 +1,11 @@
 from typing import List, Dict, Type, Tuple
+import logging
 
 from classification.preprocessing import Category, GroundTruth, Website
 from evaluation import comparison, text_preprocessing
 from extraction.extraction_models import BaseExtractionModel
+
+log = logging.getLogger('Extraction')
 
 
 def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
@@ -56,7 +59,15 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     if save_results:
         parameters = {"Model": model_cls_extraction, "Category": category, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split}
-        create_md_file(results=results, parameters=parameters)
+
+        path = "working/"
+        if "name" in model_kwargs:
+            path += "models/extraction/"
+            if "version" in model_kwargs:
+                path += model_kwargs["version"] + "/"
+            path += model_kwargs["name"] + "/"
+
+        create_md_file(results=results, parameters=parameters, path=path)
 
     return results
 
@@ -100,17 +111,25 @@ def split_data(category: Category, train_test_split: float, split_type: str, max
     return train_ids, test_ids
 
 
-def format_data_extraction(data: List[Dict[str, List[str]]]) -> List[List[str]]:
+def format_data_extraction(data: List[Dict[str, List[str]]], attribute_name: str = "all") -> List[List[str]]:
     """
     Format test data to List of Strings
+    :param attribute_name: String with name of attribute that should only be considered -> "all": all attributes used
     :param data: given datastructure
     :return: formatted data
     """
     formatted_data = list()
-    for website in data:
-        for attribute, text in website.items():
-            if attribute != "category":
-                formatted_data.append(text)
+    if attribute_name == "all":
+        for website in data:
+            for attribute, text in website.items():
+                if attribute != "category":
+                    formatted_data.append(text)
+
+    else:
+        for website in data:
+            for attribute, text in website.items():
+                if attribute != "category" and attribute == attribute_name:
+                    formatted_data.append(text)
 
     return formatted_data
 
@@ -125,17 +144,37 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
     pred = text_preprocessing.preprocess_extraction_data_comparison(data=pred)
     truth = text_preprocessing.preprocess_extraction_data_comparison(data=truth)
 
-    pred = format_data_extraction(data=pred)
-    truth = format_data_extraction(data=truth)
+    # Overall Metrics
+    pred_overall = format_data_extraction(data=pred)
+    truth_overall = format_data_extraction(data=truth)
 
-    exact_match_top_1 = comparison.exact_match(truth=truth, pred=pred, top_k=1)
-    f1_top_1 = comparison.f1(truth=truth, pred=pred, top_k=1)
+    exact_match_top_1 = comparison.exact_match(truth=truth_overall, pred=pred_overall, top_k=1)
+    f1_top_1 = comparison.f1(truth=truth_overall, pred=pred_overall, top_k=1)
 
-    exact_match_top_3 = comparison.exact_match(truth=truth, pred=pred, top_k=3)
-    f1_top_3 = comparison.f1(truth=truth, pred=pred, top_k=3)
+    exact_match_top_3 = comparison.exact_match(truth=truth_overall, pred=pred_overall, top_k=3)
+    f1_top_3 = comparison.f1(truth=truth_overall, pred=pred_overall, top_k=3)
 
-    results = {"exact_match_top_1": exact_match_top_1, "exact_match_top_3": exact_match_top_3,
-               "f1_top_1": f1_top_1, "f1_top_3": f1_top_3}
+    results_overall = {"exact_match_top_1": exact_match_top_1, "exact_match_top_3": exact_match_top_3,
+                       "f1_top_1": f1_top_1, "f1_top_3": f1_top_3}
+
+    # Metrics per attribute
+    results_attribute = dict()
+    for attribute in truth[0]:
+        if attribute != "category":
+            pred_attribute = format_data_extraction(data=pred, attribute_name=attribute)
+            truth_attribute = format_data_extraction(data=truth, attribute_name=attribute)
+
+            exact_match_top_1_attribute = comparison.exact_match(truth=truth_attribute, pred=pred_attribute, top_k=1)
+            f1_top_1_attribute = comparison.f1(truth=truth_attribute, pred=pred_attribute, top_k=1)
+
+            exact_match_top_3_attribute = comparison.exact_match(truth=truth_attribute, pred=pred_attribute, top_k=3)
+            f1_top_3_attribute = comparison.f1(truth=truth_attribute, pred=pred_attribute, top_k=3)
+
+            results_attribute.setdefault(attribute, {"exact_match_top_1": exact_match_top_1_attribute,
+                                                     "exact_match_top_3": exact_match_top_3_attribute,
+                                                     "f1_top_1": f1_top_1_attribute, "f1_top_3": f1_top_3_attribute})
+
+    results = {"overall": results_overall, "attribute": results_attribute}
 
     return results
 
@@ -157,23 +196,50 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
         for k, v in parameters.items():
             text.append("* " + str(k) + ": " + str(v))
 
+    # Overall prediction
+    text.append("## Overall Prediction: ")
+
     # In-sample prediction
-    text.append("## In-sample Prediction:")
-    text.append("| Metric | Top_1 | Top_3 |")
+    text.append("### In-sample Prediction:")
+    text.append("| Metric | Top 1 | Top 3 |")
     text.append("|---|---|---|")
-    text.append("| Exact Match | " + str(results["in sample"]["exact_match_top_1"]) + " | " +
-                str(results["in sample"]["exact_match_top_3"]) + " |")
-    text.append("| F1 | " + str(results["in sample"]["f1_top_1"]) + " | " +
-                str(results["in sample"]["f1_top_3"]) + " |")
+    text.append("| Exact Match | " + str(results["in sample"]["overall"]["exact_match_top_1"]) + " | " +
+                str(results["in sample"]["overall"]["exact_match_top_3"]) + " |")
+    text.append("| F1 | " + str(results["in sample"]["overall"]["f1_top_1"]) + " | " +
+                str(results["in sample"]["overall"]["f1_top_3"]) + " |")
 
     # Out-of-sample prediction
-    text.append("## Out-of-sample Prediction:")
-    text.append("| Metric | Top_1 | Top_3 |")
+    text.append("### Out-of-sample Prediction:")
+    text.append("| Metric | Top 1 | Top 3 |")
     text.append("|---|---|---|")
-    text.append("| Exact Match | " + str(results["out of sample"]["exact_match_top_1"]) + " | " +
-                str(results["out of sample"]["exact_match_top_3"]) + " |")
-    text.append("| F1 | " + str(results["out of sample"]["f1_top_1"]) + " | " +
-                str(results["out of sample"]["f1_top_3"]) + " |")
+    text.append("| Exact Match | " + str(results["out of sample"]["overall"]["exact_match_top_1"]) + " | " +
+                str(results["out of sample"]["overall"]["exact_match_top_3"]) + " |")
+    text.append("| F1 | " + str(results["out of sample"]["overall"]["f1_top_1"]) + " | " +
+                str(results["out of sample"]["overall"]["f1_top_3"]) + " |")
+
+    # Attribute prediction
+    for attribute in results["in sample"]["attribute"]:
+        text.append("## Attribute Prediction: " + attribute.capitalize())
+
+        # In-sample prediction
+        text.append("### In-sample Prediction:")
+        text.append("| Metric | Top 1 | Top 3 |")
+        text.append("|---|---|---|")
+        text.append(
+            "| Exact Match | " + str(results["in sample"]["attribute"][attribute]["exact_match_top_1"]) + " | " +
+            str(results["in sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
+        text.append("| F1 | " + str(results["in sample"]["attribute"][attribute]["f1_top_1"]) + " | " +
+                    str(results["in sample"]["attribute"][attribute]["f1_top_3"]) + " |")
+
+        # Out-of-sample prediction
+        text.append("### Out-of-sample Prediction:")
+        text.append("| Metric | Top 1 | Top 3 |")
+        text.append("|---|---|---|")
+        text.append(
+            "| Exact Match | " + str(results["out of sample"]["attribute"][attribute]["exact_match_top_1"]) + " | " +
+            str(results["out of sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
+        text.append("| F1 | " + str(results["out of sample"]["attribute"][attribute]["f1_top_1"]) + " | " +
+                    str(results["out of sample"]["attribute"][attribute]["f1_top_3"]) + " |")
 
     # Specify path and file-name
     save_name = "extraction_results"
@@ -182,6 +248,12 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
     save_name = path + save_name + ".md"
 
     # Save MD-File
-    with open(save_name, 'w') as f:
-        for item in text:
-            f.write("%s\n" % item)
+    try:
+        with open(save_name, 'w') as f:
+            for item in text:
+                f.write("%s\n" % item)
+    except FileNotFoundError:
+        with open("working/extraction_results.md", 'w') as f:
+            for item in text:
+                f.write("%s\n" % item)
+        log.info("FileNotFoundError: extraction_results.md saved at /working")
