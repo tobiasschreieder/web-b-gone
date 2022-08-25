@@ -59,7 +59,7 @@ class CombinedExtractionModel(BaseExtractionModel):
         ner_result = self.ner_network.predict(web_ids)
         structure_result = self.template.extract(web_ids, self.category, k=k, with_score=True)
 
-        EPSILON = 12
+        EPSILON = 15
 
         combine_result = []
         for id_result_ner, id_result_struct in zip(ner_result, structure_result):
@@ -70,7 +70,7 @@ class CombinedExtractionModel(BaseExtractionModel):
                 structure_result = id_result_struct[attr]
                 id_result[attr] = []
                 for score, candiate_struc in structure_result:
-                    if not candiate_struc or score < EPSILON:
+                    if not candiate_struc or score > EPSILON:
                         continue
                     if isinstance(candiate_struc, str):
                         candiate_struc = text_preprocessing.preprocess_text_html(candiate_struc)
@@ -90,6 +90,9 @@ class CombinedExtractionModel(BaseExtractionModel):
                 if not id_result[attr]:
                     id_result[attr] = ner_result
 
+            combine_result.append(id_result)
+
+            '''
             if good_matches > len(id_result_ner)/2:
                 new_dict = {}
                 for attr in id_result_struct:
@@ -100,5 +103,6 @@ class CombinedExtractionModel(BaseExtractionModel):
                 combine_result.append(new_dict)
             else:
                 combine_result.append(id_result)
+            '''
 
         return combine_result
