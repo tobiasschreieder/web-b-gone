@@ -72,11 +72,17 @@ class CombinedExtractionModel(BaseExtractionModel):
                 for score, candiate_struc in structure_result:
                     if not candiate_struc or score < EPSILON:
                         continue
-                    candiate_struc = text_preprocessing.preprocess_text_html(candiate_struc)
+                    if isinstance(candiate_struc, str):
+                        candiate_struc = text_preprocessing.preprocess_text_html(candiate_struc)
+                    else:
+                        continue
                     for candidate_ner in ner_result:
                         if not candidate_ner:
                             continue
-                        candidate_ner = text_preprocessing.preprocess_text_html(candidate_ner)
+                        if isinstance(candiate_struc, str):
+                            candidate_ner = text_preprocessing.preprocess_text_html(candidate_ner)
+                        else:
+                            continue
                         if candidate_ner in candiate_struc or candiate_struc in candidate_ner:
                             good_matches += 1
                             id_result[attr].append(candiate_struc)
