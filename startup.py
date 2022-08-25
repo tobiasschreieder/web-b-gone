@@ -114,13 +114,14 @@ def main():
     # # struc_temp_model.train(train_ids)
     # result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
     # print(f'{len(result)}, {len(web_ids)}')
+    '''
+    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
+    history = ner_temp_model.train(web_ids)
+    result = ner_temp_model.extract(train_ids)
+    print(result)
+    '''
 
-    # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
-    # history = ner_temp_model.train(web_ids)
-    # result = ner_temp_model.extract(train_ids)
-    # print(result)
-
-    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, 'text_1', 'stuc_1')
+    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
     result = combine_model.extract(web_ids[:2])
     print(result)
 
