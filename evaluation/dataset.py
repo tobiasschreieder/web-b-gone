@@ -4,6 +4,7 @@ import copy
 import logging
 
 from classification.preprocessing import GroundTruth, Website, Category
+from evaluation import text_preprocessing
 
 log = logging.getLogger('Extraction')
 
@@ -26,6 +27,9 @@ def exploratory_data_analysis(max_size: int = -1, name: str = "", path: Path = "
     else:
         prediction = copy.deepcopy(data)
         ground_truth = append_category(data=prediction, category=category)
+
+    # Preprocessing
+    ground_truth = text_preprocessing.preprocess_extraction_data_comparison(data=ground_truth)
 
     # Create datastructures to save later calculated metrics
     dictionary = get_dictionary(ground_truth=ground_truth)
@@ -235,12 +239,12 @@ def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]], name: str, path:
     text.append("# Exploratory Data Analysis")
 
     # Description of measures
-    text.append("**Average Length** = Average number of characters / length of solution calculated for each attribute "
-                "and category.\n")
-    text.append("**Average Tokens** = Average number of tokens (words) calculated for each attribute and category.\n")
-    text.append("**Average Solutions** = Average number of existing solutions calculated for each attribute and "
+    text.append("* **Average Length** = Average number of characters / length of solution calculated for each "
+                "attribute and category.\n")
+    text.append("* **Average Tokens** = Average number of tokens (words) calculated for each attribute and category.\n")
+    text.append("* **Average Solutions** = Average number of existing solutions calculated for each attribute and "
                 "category.\n")
-    text.append("**Average Missing** = Average proportion of missing solutions calculated for each attribute and "
+    text.append("* **Average Missing** = Average proportion of missing solutions calculated for each attribute and "
                 "category.\n")
     text.append("\n")
 
