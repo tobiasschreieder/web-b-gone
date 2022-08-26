@@ -10,7 +10,7 @@ class NeuralNetExtractionModel(BaseExtractionModel):
     network: ExtractionNetwork
 
     def __init__(self, category: Category, name: str, version: str):
-        super().__init__(category)
+        super().__init__(category, version)
         self.network = ExtractionNetwork.get(version)(name)
 
     def train(self, web_ids: List[str], **kwargs) -> None:
@@ -21,7 +21,7 @@ class NeuralNetExtractionModel(BaseExtractionModel):
         :return:
         """
         self.network.train(web_ids, **kwargs)
-        self.network.save()
+        self.save()
 
     def extract(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
         """
@@ -30,5 +30,19 @@ class NeuralNetExtractionModel(BaseExtractionModel):
         :param kwargs:
         :return:
         """
-        self.network.load()
+        self.load()
         return self.network.predict(web_ids, **kwargs)
+
+    def save(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        self.network.save()
+
+    def load(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        self.network.load()

@@ -18,18 +18,13 @@ class CombinedExtractionModel(BaseExtractionModel):
     ner_network: ExtractionNetwork
     log = logging.getLogger('CombinedExtModel')
 
-    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/'))
-    ner_name: str
-    struc_name: str
+    struc_path: Path = cfg.working_dir.joinpath('models/extraction/').joinpath('StrucTemp_v2')
 
     def __init__(self, category: Category, ner_name: str, struc_name: str):
-        super().__init__(category)
-        self.ner_name = ner_name
-        self.struc_name = struc_name
-        self.ner_network = ExtractionNetwork.get('NerV1')(self.ner_name)
+        super().__init__(category, 'CombinedStrucNer')
+        self.ner_network = ExtractionNetwork.get('NerV1')(ner_name)
         self.template = None
-        self.dir_path = self.dir_path.joinpath('strucTemp').joinpath(self.struc_name)
-        self.dir_path.mkdir(parents=True, exist_ok=True)
+        self.struc_path = self.struc_path.joinpath(struc_name)
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """
@@ -52,9 +47,7 @@ class CombinedExtractionModel(BaseExtractionModel):
         :param k: number of results per attribute, default: 3
         :return: Extracted information
         """
-        self.ner_network.load()
-        if self.template is None:
-            self.template = StructuredTemplate.load(self.dir_path)
+        self.load()
 
         ner_result = self.ner_network.predict(web_ids)
         structure_result = self.template.extract(web_ids, self.category, k=k, with_score=True)
@@ -106,3 +99,12 @@ class CombinedExtractionModel(BaseExtractionModel):
             '''
 
         return combine_result
+
+    def load(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        self.ner_network.load()
+        if self.template is None:
+            self.template = StructuredTemplate.load(self.dir_path)

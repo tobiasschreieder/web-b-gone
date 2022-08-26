@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Dict, Type, Tuple
 import logging
 
@@ -70,12 +71,13 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         for k, v in model_kwargs.items():
             parameters.setdefault(str(k).capitalize(), str(v))
 
-        path = "working/"
-        if "name" in model_kwargs:
-            path += "models/extraction/"
-            if "version" in model_kwargs:
-                path += model_kwargs["version"] + "/"
-            path += model_kwargs["name"] + "/"
+        path = model_extraction.dir_path
+        # path = "working/"
+        # if "name" in model_kwargs:
+        #     path += "models/extraction/"
+        #     if "version" in model_kwargs:
+        #         path += model_kwargs["version"] + "/"
+        #     path += model_kwargs["name"] + "/"
 
         create_md_file(results=results, parameters=parameters, path=path)
 
@@ -193,14 +195,16 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
 
 
 def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, str], name: str = "",
-                   path: str = "working/"):
+                   path: Path = Path("working/")):
     """
     Create MD-File for extraction results
     :param results: Dictionary with calculated results from extraction model
     :param parameters: Dictionary with all parameter that should be listed in file
     :param name: String with name of considered model
-    :param path: String with path to save MD-File
+    :param path: Path with path to save MD-File
     """
+    path = Path(path)
+
     # Header
     text = list()
     text.append("# Evaluation Extraction")
@@ -258,13 +262,14 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
     save_name = "extraction_results"
     if name != "":
         save_name += "_" + name
-    save_name = path + save_name + ".md"
+    save_name = path.joinpath(save_name + ".md")
 
     # Save MD-File
     try:
         with open(save_name, 'w') as f:
             for item in text:
                 f.write("%s\n" % item)
+        log.info(f'results saved to {path}')
     except FileNotFoundError:
         with open("working/extraction_results.md", 'w') as f:
             for item in text:

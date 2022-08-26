@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Dict
 import copy
 import logging
@@ -7,7 +8,7 @@ from classification.preprocessing import GroundTruth, Website, Category
 log = logging.getLogger('Extraction')
 
 
-def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "working/", data=None, category=None):
+def exploratory_data_analysis(max_size: int = -1, name: str = "", path: Path = "working/", data=None, category=None):
     """
     Run exploratory data analysis
     :param category: Category of given data
@@ -16,6 +17,8 @@ def exploratory_data_analysis(max_size: int = -1, name: str = "", path: str = "w
     :param name: String with name of considered dataset
     :param max_size: Size of sample which should be used, -1 -> all data will be used
     """
+    path = Path(path)
+
     # Load dataset
     if not data:
         web_ids: List[str] = Website.get_website_ids(max_size=max_size, rdm_sample=True, seed='eval_class')
@@ -218,13 +221,15 @@ def average_missing_ground_truth(ground_truth: List[Dict[str, List[str]]], dicti
     return missing_dict
 
 
-def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]], name: str, path: str):
+def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]], name: str, path: Path):
     """
     Create Markdown File with Table of EDA in /working
     :param path: String with path to save MD-File
     :param name: String with name of considered dataset
     :param eda: List with all calculated exploratory data analysis results
     """
+    path = Path(path)
+
     # Header
     text = list()
     text.append("# Exploratory Data Analysis")
@@ -259,15 +264,16 @@ def create_eda_md_table(eda: List[Dict[str, Dict[str, float]]], name: str, path:
     save_name = "eda"
     if name != "":
         save_name += "_" + name
-    save_name = path + save_name + ".md"
+    save_name = path.joinpath(save_name + ".md")
 
     # Save MD-File
     try:
         with open(save_name, 'w') as f:
             for item in text:
                 f.write("%s\n" % item)
+        log.info(f'eda saved to {path}')
     except FileNotFoundError:
-        with open("working/extraction_results.md", 'w') as f:
+        with open("working/eda_results.md", 'w') as f:
             for item in text:
                 f.write("%s\n" % item)
-        log.info("FileNotFoundError: extraction_results.md saved at /working")
+        log.info("FileNotFoundError: eda_results.md saved at /working")

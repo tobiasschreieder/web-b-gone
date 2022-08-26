@@ -93,12 +93,12 @@ class StructuredTemplate:
         print("---")
 
 
-class StructuredTemplateExtractionModel(BaseExtractionModel):
+class StrucTempExtractionModelV1(BaseExtractionModel):
     template: StructuredTemplate
     log = logging.getLogger('StrucTempExtModel')
 
     def __init__(self, category: Category):
-        super().__init__(category)
+        super().__init__(category, 'StrucTemp_v1')
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """

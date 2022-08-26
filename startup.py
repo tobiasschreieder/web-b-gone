@@ -8,9 +8,8 @@ from classification.category_models import RandomCategoryModel
 from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
-from extraction import StructuredTemplateExtractionModel, RandomExtractionModel, NeuralNetExtractionModel, \
-    StructuredTreeTemplateExtractionModel
-from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
+from extraction import StrucTempExtractionModelV2, RandomExtractionModel, NeuralNetExtractionModel, \
+    StrucTempExtractionModelV3, CombinedExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -108,7 +107,7 @@ def main():
     # )
     middel = datetime.datetime.now()
     results_extraction_tree = extraction.evaluate_extraction(
-        model_cls_extraction=StructuredTreeTemplateExtractionModel,
+        model_cls_extraction=StrucTempExtractionModelV3,
         category=Category.NBA_PLAYER,
         train_test_split=0.25,
         max_size=4000,
@@ -120,7 +119,7 @@ def main():
     log.info(f'Took {now - middel} for v3')
     # log.info(results_extraction)
     log.info(results_extraction_tree)
-    extraction.create_md_file(results_extraction_tree, {}, 'strucTree_4000')
+    # extraction.create_md_file(results_extraction_tree, {}, 'strucTree_4000')
 
     # web_ids = []
     # train_ids = []

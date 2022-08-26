@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import List, Dict
 
 from classification.preprocessing import Category
@@ -10,15 +9,14 @@ from ..structure_helper_v2 import StructuredTemplate
 cfg = Config.get()
 
 
-class StructuredTemplateExtractionModel(BaseExtractionModel):
+class StrucTempExtractionModelV2(BaseExtractionModel):
     template: StructuredTemplate
-    log = logging.getLogger('StrucTempExtModel')
+    log = logging.getLogger('StrucTempExtModel V2')
 
-    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/strucTemp/'))
     name: str
 
     def __init__(self, category: Category, name: str):
-        super().__init__(category)
+        super().__init__(category, 'StrucTemp_v2')
         self.name = name
         self.template = None
         self.dir_path = self.dir_path.joinpath(self.name)
@@ -34,7 +32,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         template = StructuredTemplate()
         template.train(web_ids)
         self.template = template
-        self.template.save(self.dir_path)
+        self.save()
 
     def extract(self, web_ids: List[str], n_jobs: int = -2, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
@@ -47,8 +45,7 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         :param k: number of results per attribute, default: 3
         :return: Extracted information
         """
-        if self.template is None:
-            self.template = StructuredTemplate.load(self.dir_path)
+        self.load()
 
         return self.template.extract(web_ids, self.category, k=k)
         # if len(web_ids) > 20:
@@ -57,3 +54,18 @@ class StructuredTemplateExtractionModel(BaseExtractionModel):
         # else:
         #     data = [extract_web_id(web_id) for web_id in web_ids]
         # return data
+
+    def save(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        self.template.save(self.dir_path)
+
+    def load(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        if self.template is None:
+            self.template = StructuredTemplate.load(self.dir_path)

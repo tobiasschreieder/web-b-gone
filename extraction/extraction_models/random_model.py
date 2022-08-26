@@ -18,7 +18,7 @@ def _get_rdm_words(text: str) -> str:
 class RandomExtractionModel(BaseExtractionModel):
 
     def __init__(self, category: Category, seed: Any = None):
-        super().__init__(category)
+        super().__init__(category, 'rdm_model')
         self.seed = seed
 
     def extract(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:

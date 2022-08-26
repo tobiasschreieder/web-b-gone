@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import List, Dict
 
 from classification.preprocessing import Category
@@ -13,15 +12,14 @@ cfg = Config.get()
 # TODO update build_mapping so no comments are returned
 
 
-class StructuredTreeTemplateExtractionModel(BaseExtractionModel):
+class StrucTempExtractionModelV3(BaseExtractionModel):
     template: StructuredTreeTemplate
-    log = logging.getLogger('StrucTreeTempExtModel')
+    log = logging.getLogger('StrucTempExtModel V3')
 
-    dir_path: Path = cfg.working_dir.joinpath(Path('models/extraction/strucTreeTemp/'))
     name: str
 
     def __init__(self, category: Category, name: str):
-        super().__init__(category)
+        super().__init__(category, 'StrucTemp_v3')
         self.name = name
         self.template = None
         self.dir_path = self.dir_path.joinpath(self.name)
@@ -54,3 +52,18 @@ class StructuredTreeTemplateExtractionModel(BaseExtractionModel):
             self.template = StructuredTreeTemplate.load(self.dir_path)
 
         return self.template.extract(web_ids, self.category, k=k)
+
+    def save(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        self.template.save(self.dir_path)
+
+    def load(self) -> None:
+        """
+        TODO
+        :return:
+        """
+        if self.template is None:
+            self.template = StructuredTreeTemplate.load(self.dir_path)
