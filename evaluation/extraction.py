@@ -38,15 +38,15 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
 
     model_extraction: BaseExtractionModel
     model_extraction = model_cls_extraction(category, **model_kwargs)
-    if model_cls_extraction != CombinedExtractionModel:
-        model_extraction.train(train_ids)
+    # if model_cls_extraction != CombinedExtractionModel:
+    #     model_extraction.train(train_ids)
 
     # Out of sample prediction
     prediction_oos = list()
-    ground_truth = [GroundTruth.load(web_id).attributes for web_id in test_ids]
     if len(test_ids) != 0:
         prediction_oos = model_extraction.extract(web_ids=test_ids)
-        results_extraction_test = extraction_metrics(prediction_oos, ground_truth)
+        results_extraction_test = extraction_metrics(prediction_oos,
+                                                     [GroundTruth.load(web_id).attributes for web_id in test_ids])
     else:
         results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
                                    "f1_top_1": None, "f1_top_3": None}
@@ -54,7 +54,8 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
     # In sample prediction
     if len(train_ids) != 0:
         prediction_is = model_extraction.extract(web_ids=train_ids)
-        results_extraction_train = extraction_metrics(prediction_is, ground_truth)
+        results_extraction_train = extraction_metrics(prediction_is,
+                                                      [GroundTruth.load(web_id).attributes for web_id in train_ids])
     else:
         results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
                                     "f1_top_1": None, "f1_top_3": None}
@@ -81,7 +82,7 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         preprocessed_prediction = text_preprocessing.preprocess_extraction_data_comparison(
             data=copy.deepcopy(prediction_oos))
         preprocessed_ground_truth = text_preprocessing.preprocess_extraction_data_comparison(
-            data=copy.deepcopy(ground_truth))
+            data=[GroundTruth.load(web_id).attributes for web_id in test_ids])
 
         save_wrong_results(pred=preprocessed_prediction, truth=preprocessed_ground_truth, path=path)
 
@@ -295,7 +296,7 @@ def save_wrong_results(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
         for attribute, text in truth[i].items():
             if attribute != "category":
                 if len(text) > 0 and len(pred[i][attribute]) > 0:
-                    print(attribute, text[0], pred[i][attribute][0])
+                    # print(attribute, text[0], pred[i][attribute][0])
                     if text[0] != pred[i][attribute][0]:
                         wrong_result_list.append(" | " + str(attribute) + " | " + str(pred[i][attribute][0]) + " | " +
                                                  str(text[0]) + " | ")
@@ -317,4 +318,3 @@ def save_wrong_results(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
             for item in wrong_result_list:
                 f.write("%s\n" % item)
         log.info("FileNotFoundError: extraction_mistakes.md saved at /working")
-
