@@ -1,8 +1,10 @@
 import logging
 import random
+import re
 from typing import List, Dict
 
 import spacy
+from bs4 import Comment, Tag
 from spacy.training.example import Example
 
 from classification.preprocessing import Website
@@ -10,13 +12,33 @@ from extraction import nerHelper
 from .base_extraction_network import BaseExtractionNetwork
 
 
-class ExtractionNetworkNerV1(BaseExtractionNetwork):
+def tag_filter_regex(element):
+    if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
+        return False
+    if isinstance(element, Comment):
+        return False
+
+    if isinstance(element, Tag):
+        reg = re.compile('nav')
+
+        if 'class' in element.attrs.keys():
+            if any(reg.search(html_class) for html_class in element.attrs['class']):
+                return False
+
+        if 'id' in element.attrs.keys():
+            if reg.search(element.attrs['id']):
+                return False
+
+    return True
+
+
+class ExtractionNetworkNerV3(BaseExtractionNetwork):
 
     model: spacy.Language
-    log = logging.getLogger('ExtNet-NerV1')
+    log = logging.getLogger('ExtNet-NerV3')
 
     def __init__(self, name: str, **kwargs):
-        super().__init__(name=name, version='NerV1',
+        super().__init__(name=name, version='NerV3',
                          description='Try to extract information with custom SPACY-Model')
         self.nlp = spacy.load('en_core_web_md')
         self.EMB_DIM = self.nlp.vocab.vectors_length
@@ -27,7 +49,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
         result_list = []
         for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
+            html_text = nerHelper.get_html_text(web_id, filter_method=tag_filter_regex)
 
             website = Website.load(web_id)
             attributes = website.truth.attributes
@@ -55,12 +77,12 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         return result_list
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 100
-        batch_size = 16
+        epochs = 40
+        batch_size = 32
 
         training_data = {'classes': [], 'annotations': []}
         for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
+            html_text = nerHelper.get_html_text(web_id, filter_method=tag_filter_regex)
             # print("html_text: ", html_text)
 
             website = Website.load(web_id)

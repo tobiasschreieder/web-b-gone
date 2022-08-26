@@ -38,8 +38,8 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
 
     model_extraction: BaseExtractionModel
     model_extraction = model_cls_extraction(category, **model_kwargs)
-    # if model_cls_extraction != CombinedExtractionModel:
-    #     model_extraction.train(train_ids)
+    if model_cls_extraction != CombinedExtractionModel:
+        model_extraction.train(train_ids)
 
     # Out of sample prediction
     prediction_oos = list()

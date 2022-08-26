@@ -1,5 +1,6 @@
 from copy import copy
 from pathlib import Path
+
 from bs4 import BeautifulSoup
 from bs4.element import Comment
 
@@ -14,13 +15,13 @@ def tag_visible(element):
     return True
 
 
-def get_html_text(web_id):
-    print(web_id)
+def get_html_text(web_id, filter_method=tag_visible):
+    # print(web_id)
     website = Website.load(web_id)
     with Path(website.file_path).open(encoding='utf-8') as htm_file:
         soup = BeautifulSoup(htm_file, features="html.parser")
     texts = soup.findAll(text=True)
-    visible_texts = filter(tag_visible, texts)
+    visible_texts = filter(filter_method, texts)
     line_list = []
     temp_line = []
     for line in [t.strip() for t in visible_texts]:
@@ -36,7 +37,7 @@ def get_html_text(web_id):
                     line_list.append(' '.join(temp_line))
                     temp_line = []
                 line_list.append(line)
-    print(line_list)
+    # print(line_list)
     return line_list
 
 
