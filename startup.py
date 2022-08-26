@@ -100,9 +100,9 @@ def main():
         model_cls_extraction=NeuralNetExtractionModel,
         category=Category.NBA_PLAYER,
         train_test_split=0.7,
-        max_size=200,
+        max_size=-1,
         split_type="website",
-        **{"name": "test_reg_new", "version": "NerV3"}
+        **{"name": "paper_1", "version": "NerV3"}
     )
     log.info(results_extraction)
 

@@ -55,8 +55,8 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         return result_list
 
     def train(self, web_ids: List[str], **kwargs) -> None:
-        epochs = 100
-        batch_size = 16
+        epochs = 40
+        batch_size = 32
 
         training_data = {'classes': [], 'annotations': []}
         for web_id in web_ids:
