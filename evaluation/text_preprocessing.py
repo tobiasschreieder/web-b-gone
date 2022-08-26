@@ -4,6 +4,7 @@ from typing import List, Dict
 from nltk.stem import WordNetLemmatizer
 
 allowed_chars = ["$", ".", ",", "%"]  # List of chars which will not be removed
+stop_words = ["nbsp", "&nbsp"]
 
 
 def remove_stop_chars(text: str) -> str:
@@ -19,6 +20,10 @@ def remove_stop_chars(text: str) -> str:
 
     # remove punctuations from given text
     text = "".join([i for i in text if i not in punctuations_used])
+
+    # remove stopwords from given text
+    for sw in stop_words:
+        text = text.replace(sw, "")
 
     # remove spaces with length > 1 ("   " -> " ")
     text = " ".join(text.split())
@@ -89,9 +94,6 @@ def preprocess_text_html(text: str) -> str:
 
     if not isinstance(text, str):
         text = " ".join(text)
-
-    # rules for replacement
-    text = text.replace("&nbsp", " ")
 
     text = text.lower()
     text = remove_stop_chars(text=text)
