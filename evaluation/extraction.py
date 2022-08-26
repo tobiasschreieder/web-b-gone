@@ -166,12 +166,15 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
 
     exact_match_top_1 = comparison.exact_match(truth=truth_overall, pred=pred_overall, top_k=1)
     f1_top_1 = comparison.f1(truth=truth_overall, pred=pred_overall, top_k=1)
+    partial_match_top_1 = comparison.partial_match(truth=truth_overall, pred=pred_overall, top_k=1)
 
     exact_match_top_3 = comparison.exact_match(truth=truth_overall, pred=pred_overall, top_k=3)
     f1_top_3 = comparison.f1(truth=truth_overall, pred=pred_overall, top_k=3)
+    partial_match_top_3 = comparison.partial_match(truth=truth_overall, pred=pred_overall, top_k=3)
 
     results_overall = {"exact_match_top_1": exact_match_top_1, "exact_match_top_3": exact_match_top_3,
-                       "f1_top_1": f1_top_1, "f1_top_3": f1_top_3}
+                       "f1_top_1": f1_top_1, "f1_top_3": f1_top_3,
+                       "partial_match_top_1": partial_match_top_1, "partial_match_top_3": partial_match_top_3}
 
     # Metrics per attribute
     results_attribute = dict()
@@ -182,13 +185,19 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
 
             exact_match_top_1_attribute = comparison.exact_match(truth=truth_attribute, pred=pred_attribute, top_k=1)
             f1_top_1_attribute = comparison.f1(truth=truth_attribute, pred=pred_attribute, top_k=1)
+            partial_match_top_1_attribute = comparison.partial_match(truth=truth_attribute, pred=pred_attribute,
+                                                                     top_k=1)
 
             exact_match_top_3_attribute = comparison.exact_match(truth=truth_attribute, pred=pred_attribute, top_k=3)
             f1_top_3_attribute = comparison.f1(truth=truth_attribute, pred=pred_attribute, top_k=3)
+            partial_match_top_3_attribute = comparison.partial_match(truth=truth_attribute, pred=pred_attribute,
+                                                                     top_k=3)
 
             results_attribute.setdefault(attribute, {"exact_match_top_1": exact_match_top_1_attribute,
                                                      "exact_match_top_3": exact_match_top_3_attribute,
-                                                     "f1_top_1": f1_top_1_attribute, "f1_top_3": f1_top_3_attribute})
+                                                     "f1_top_1": f1_top_1_attribute, "f1_top_3": f1_top_3_attribute,
+                                                     "partial_match_top_1": partial_match_top_1_attribute,
+                                                     "partial_match_top_3": partial_match_top_3_attribute})
 
     results = {"overall": results_overall, "attribute": results_attribute}
 
@@ -225,6 +234,8 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
                 str(results["in sample"]["overall"]["exact_match_top_3"]) + " |")
     text.append("| F1 | " + str(results["in sample"]["overall"]["f1_top_1"]) + " | " +
                 str(results["in sample"]["overall"]["f1_top_3"]) + " |")
+    text.append("| Partial Match | " + str(results["in sample"]["overall"]["partial_match_top_1"]) + " | " +
+                str(results["in sample"]["overall"]["partial_match_top_3"]) + " |")
 
     # Out-of-sample prediction
     text.append("### Out-of-sample Prediction:")
@@ -234,6 +245,8 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
                 str(results["out of sample"]["overall"]["exact_match_top_3"]) + " |")
     text.append("| F1 | " + str(results["out of sample"]["overall"]["f1_top_1"]) + " | " +
                 str(results["out of sample"]["overall"]["f1_top_3"]) + " |")
+    text.append("| Partial Match | " + str(results["out of sample"]["overall"]["partial_match_top_1"]) + " | " +
+                str(results["out of sample"]["overall"]["partial_match_top_3"]) + " |")
 
     # Attribute prediction
     for attribute in results["in sample"]["attribute"]:
@@ -243,21 +256,23 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
         text.append("### In-sample Prediction:")
         text.append("| Metric | Top 1 | Top 3 |")
         text.append("|---|---|---|")
-        text.append(
-            "| Exact Match | " + str(results["in sample"]["attribute"][attribute]["exact_match_top_1"]) + " | " +
-            str(results["in sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
+        text.append("| Exact Match | " + str(results["in sample"]["attribute"][attribute]["exact_match_top_1"]) +
+                    " | " + str(results["in sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
         text.append("| F1 | " + str(results["in sample"]["attribute"][attribute]["f1_top_1"]) + " | " +
                     str(results["in sample"]["attribute"][attribute]["f1_top_3"]) + " |")
+        text.append("| Partial Match | " + str(results["in sample"]["attribute"][attribute]["partial_match_top_1"]) +
+                    " | " + str(results["in sample"]["attribute"][attribute]["partial_match_top_3"]) + " |")
 
         # Out-of-sample prediction
         text.append("### Out-of-sample Prediction:")
         text.append("| Metric | Top 1 | Top 3 |")
         text.append("|---|---|---|")
-        text.append(
-            "| Exact Match | " + str(results["out of sample"]["attribute"][attribute]["exact_match_top_1"]) + " | " +
-            str(results["out of sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
+        text.append("| Exact Match | " + str(results["out of sample"]["attribute"][attribute]["exact_match_top_1"]) +
+                    " | " + str(results["out of sample"]["attribute"][attribute]["exact_match_top_3"]) + " |")
         text.append("| F1 | " + str(results["out of sample"]["attribute"][attribute]["f1_top_1"]) + " | " +
                     str(results["out of sample"]["attribute"][attribute]["f1_top_3"]) + " |")
+        text.append("| Partial Match | " + str(results["out of sample"]["attribute"][attribute]["partial_match_top_1"])
+                    + " | " + str(results["out of sample"]["attribute"][attribute]["partial_match_top_3"]) + " |")
 
     # Specify path and file-name
     save_name = "extraction_results"
@@ -296,7 +311,6 @@ def save_wrong_results(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
         for attribute, text in truth[i].items():
             if attribute != "category":
                 if len(text) > 0 and len(pred[i][attribute]) > 0:
-                    # print(attribute, text[0], pred[i][attribute][0])
                     if text[0] != pred[i][attribute][0]:
                         wrong_result_list.append(" | " + str(attribute) + " | " + str(pred[i][attribute][0]) + " | " +
                                                  str(text[0]) + " | ")

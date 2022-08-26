@@ -78,6 +78,17 @@ def preprocess_text_comparison(text: str) -> str:
     return text
 
 
+def preprocess_text_partial_match(text: str) -> str:
+    """
+    Method to preprocess text for partial match
+    :param text: string with given text
+    :return: string with given text
+    """
+    text = ''.join(char for char in text if char.isalnum())
+
+    return text
+
+
 def preprocess_list_comparison(texts: List[str]) -> List[str]:
     """
     Method to preprocess a list of texts for comparison
