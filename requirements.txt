@@ -14,3 +14,4 @@ flashtext
 spacy
 tensorflow_datasets
 tensorflow_text
+matplotlib

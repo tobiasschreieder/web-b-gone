@@ -85,10 +85,11 @@ def get_all_text_from_feature_list(feature_list: List[FeatureHolder], web_ids: L
 def get_dict_from_feature_list_inkl_keyword_result(feature_list: List[FeatureHolder], web_ids: List[str]) -> pd.DataFrame:
     train_dict = pd.DataFrame()
     for f in feature_list:
-        df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'head': [f.head], 'title': [f.title], 'domain_name': [f.domain_name], 'html': [f.html], 'hyperlinks': [f.link], 'text_all': [f.text_all], 'keyword_result': [find_class(f.html)], 'true_category': [f.true_category]}, index=[f.web_id],)
+        #df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'head': [f.head], 'title': [f.title], 'domain_name': [f.domain_name], 'html': [f.html], 'hyperlinks': [f.link], 'text_all': [f.text_all], 'keyword_result': [find_class(f.html)], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
+        df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'html': [f.html], 'text_all': [f.text_all], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
         #df["true_category"] = df["true_category"].astype("category")
         train_dict = pd.concat([train_dict, df])
-        train_dict["true_category"] = pd.Categorical(
-            train_dict["true_category"], categories=[Category.AUTO,Category.BOOK,Category.CAMERA,Category.JOB,Category.MOVIE,Category.NBA_PLAYER,Category.RESTAURANT,Category.UNIVERSITY], ordered=False
-        )
+        #train_dict["true_category"] = pd.Categorical(
+        #    train_dict["true_category"], categories=[1,2,3,4,5,6,7,8,9], ordered=False
+        #)
     return train_dict
