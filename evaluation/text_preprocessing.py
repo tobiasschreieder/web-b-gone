@@ -43,6 +43,27 @@ def lemmatize_text(text: str) -> str:
     return text
 
 
+def split_char_numeric(text: str) -> str:
+    """
+    Split letters from numeric characters for each token in given string: "abc123" -> "abc 123"
+    :param text: String with given text
+    :return: new separated string
+    """
+    tokens = text.split(" ")
+    new_text = text
+
+    for token in tokens:
+        for char in token:
+            if char.isdigit():
+                i = token.index(char)
+                text_1 = token[:i]
+                text_2 = token[i:]
+                new_token = text_1 + " " + text_2
+                new_text = new_text.replace(token, new_token)
+                break
+    return new_text
+
+
 def preprocess_text_comparison(text: str) -> str:
     """
     Method to preprocess text for comparison
@@ -50,6 +71,7 @@ def preprocess_text_comparison(text: str) -> str:
     :return: string with given text
     """
     text = text.lower()
+    text = split_char_numeric(text=text)
     text = remove_stop_chars(text=text)
     text = lemmatize_text(text=text)
 

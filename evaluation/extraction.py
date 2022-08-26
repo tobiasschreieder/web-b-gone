@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 from typing import List, Dict, Type, Tuple
 import logging
@@ -42,20 +43,18 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
 
     # Out of sample prediction
     prediction_oos = list()
+    ground_truth = [GroundTruth.load(web_id).attributes for web_id in test_ids]
     if len(test_ids) != 0:
         prediction_oos = model_extraction.extract(web_ids=test_ids)
-        results_extraction_test = extraction_metrics(prediction_oos,
-                                                     [GroundTruth.load(web_id).attributes for web_id in test_ids])
+        results_extraction_test = extraction_metrics(prediction_oos, ground_truth)
     else:
         results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
                                    "f1_top_1": None, "f1_top_3": None}
 
     # In sample prediction
-    prediction_is = list()
     if len(train_ids) != 0:
         prediction_is = model_extraction.extract(web_ids=train_ids)
-        results_extraction_train = extraction_metrics(prediction_is,
-                                                      [GroundTruth.load(web_id).attributes for web_id in train_ids])
+        results_extraction_train = extraction_metrics(prediction_is, ground_truth)
     else:
         results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
                                     "f1_top_1": None, "f1_top_3": None}
@@ -72,18 +71,19 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
             parameters.setdefault(str(k).capitalize(), str(v))
 
         path = model_extraction.dir_path
-        # path = "working/"
-        # if "name" in model_kwargs:
-        #     path += "models/extraction/"
-        #     if "version" in model_kwargs:
-        #         path += model_kwargs["version"] + "/"
-        #     path += model_kwargs["name"] + "/"
-
         create_md_file(results=results, parameters=parameters, path=path)
 
         # EDA of prediction
         if len(prediction_oos) != 0:
             dataset.exploratory_data_analysis(name="prediction", path=path, data=prediction_oos, category=category)
+
+        # Wrong Predictions
+        preprocessed_prediction = text_preprocessing.preprocess_extraction_data_comparison(
+            data=copy.deepcopy(prediction_oos))
+        preprocessed_ground_truth = text_preprocessing.preprocess_extraction_data_comparison(
+            data=copy.deepcopy(ground_truth))
+
+        save_wrong_results(pred=preprocessed_prediction, truth=preprocessed_ground_truth, path=path)
 
     return results
 
@@ -275,3 +275,46 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
             for item in text:
                 f.write("%s\n" % item)
         log.info("FileNotFoundError: extraction_results.md saved at /working")
+
+
+def save_wrong_results(pred: List[Dict[str, List[str]]], truth: List[Dict[str, List[str]]],
+                       name: str = "", path: Path = Path("working/")):
+    """
+    Save wrong extractions as MD-File
+    :param pred: Predictions
+    :param truth: Ground-truth
+    :param name: String with name of considered model
+    :param path: Path with path to save MD-File
+    """
+    wrong_result_list = list()
+    wrong_result_list.append("# Wrong Extractions")
+    wrong_result_list.append("| Attribute | Prediction | Ground Truth |")
+    wrong_result_list.append("|---|---|---|")
+
+    for i in range(0, len(truth)):
+        for attribute, text in truth[i].items():
+            if attribute != "category":
+                if len(text) > 0 and len(pred[i][attribute]) > 0:
+                    print(attribute, text[0], pred[i][attribute][0])
+                    if text[0] != pred[i][attribute][0]:
+                        wrong_result_list.append(" | " + str(attribute) + " | " + str(pred[i][attribute][0]) + " | " +
+                                                 str(text[0]) + " | ")
+
+    # Specify path and file-name
+    save_name = "extraction_mistakes"
+    if name != "":
+        save_name += "_" + name
+    save_name = path.joinpath(save_name + ".md")
+
+    # Save MD-File
+    try:
+        with open(save_name, 'w') as f:
+            for item in wrong_result_list:
+                f.write("%s\n" % item)
+        log.info(f'results saved to {path}')
+    except FileNotFoundError:
+        with open("working/extraction_mistakes.md", 'w') as f:
+            for item in wrong_result_list:
+                f.write("%s\n" % item)
+        log.info("FileNotFoundError: extraction_mistakes.md saved at /working")
+
