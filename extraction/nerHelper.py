@@ -74,7 +74,7 @@ def html_text_to_spacy(html_text, attributes):
         elif value:
             pass
         else:
-            print("nothing there", attr, value)
+            # print("nothing there", attr, value)
             continue
         value = value.strip()
         value = value.replace("  ", " ")
