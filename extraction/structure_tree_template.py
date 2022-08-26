@@ -2,11 +2,12 @@ import dataclasses
 import logging
 import pickle
 import random
+import re
 from copy import copy
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Set, Union, Iterable
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, NavigableString, Comment
 
 from classification.preprocessing import Category, Website
 import evaluation.text_preprocessing as tp
@@ -123,17 +124,6 @@ class StructuredTreeTemplate:
         result += '})'
         return result
 
-    # def get_from_web_id_and_attribute(self, web_id: str, attribute: str) -> Dict[str, Any]:
-    #     attr_data = self.get_attr_data(attribute)
-    #
-    #     if web_id not in attr_data.positions.keys():
-    #         raise ValueError(f"Web_id {web_id} wasn't used for training.")
-    #
-    #     return {'attribute': attribute,
-    #             'position': attr_data.positions[web_id],
-    #             'text_info': attr_data.text_infos[web_id],
-    #             'web_id': web_id}
-
     @classmethod
     def load(cls, path: Path) -> 'StructuredTreeTemplate':
         struc_temp = cls()
@@ -157,9 +147,7 @@ class StructuredTreeTemplate:
                 soup = BeautifulSoup(htm_file, features="html.parser")
 
             body = soup.find('body')
-            # html_tree = build_html_tree(body, [])
-            # print_html_tree(html_tree)
-            text_position_mapping = build_text_position_mapping(body)
+            text_position_mapping = build_mapping(body)
 
             candidates = dict()
             for key in category.get_attribute_names():
@@ -177,19 +165,13 @@ class StructuredTreeTemplate:
                 soup = BeautifulSoup(htm_file, features="html.parser")
 
             body = soup.find('body')
-            # html_tree = build_html_tree(body, [])
-            # print_html_tree(html_tree)
-            text_position_mapping = build_text_position_mapping(body)
-            # ToDo Comments are also recognized as text
-            # text_position_mapping = build_mapping(body)
+            text_position_mapping = build_mapping(body)
 
             attr_truth = website.truth.attributes
             for key in attr_truth:
                 if key == 'category':
                     continue
 
-                # self.log.debug(f'Find best match for attribute {key}')
-                # TODO witch ground truth should be used, currently the longest
                 if len(attr_truth[key]) == 0:
                     continue
 
@@ -255,40 +237,81 @@ def get_longest_element(iter_obj: Iterable[Any]):
     return e
 
 
-def build_text_position_mapping(section: Tag,
-                                current_pos=None,
-                                section_count: int = 0) -> List[Any]:
+attr_keys = {
+    'height', 'method', 'href', 'frameborder', 'marginheight', 'placeholder', 'show_faces',
+    'type', 'width', 'hspace', 'vspace', 'onchange', 'selected', 'scrolling', 'id', 'ref',
+    'border', 'onsubmit', 'onclick', 'rel', 'data-sportid', 'accept-charset', 'bordercolor',
+    'class', 'marginwidth', 'value', 'name', 'cellpadding', 'cellspacing', 'alt', 'colspan',
+    'autocomplete', 'style', 'src', 'action', 'valign', 'align', 'layout'
+}
+
+
+def filter_section(section: Tag) -> bool:
+    tags_to_ignore = ['script']
+
+    if section.name in tags_to_ignore:
+        return True
+
+    # boilerplate with regex search after -nav nav nav-, ggf header
+    reg = re.compile('nav')
+
+    if 'class' in section.attrs.keys():
+        if any(reg.search(html_class) for html_class in section.attrs['class']):
+            return True
+
+    if 'id' in section.attrs.keys():
+        if reg.search(section.attrs['id']):
+            return True
+
+    return False
+
+
+@dataclasses.dataclass
+class TextPosMapping:
+    text: str
+    position: List[HTMLPosition]
+
+    def __getitem__(self, item):
+        if item == 'text':
+            return self.text
+        elif item == 'position':
+            return self.position
+        else:
+            raise KeyError(f'{item} is not in TextPosMapping.')
+
+
+def build_mapping(section: Tag,
+                  current_pos: List[HTMLPosition] = None,
+                  section_count: int = 0) -> List[TextPosMapping]:
     if current_pos is None:
         current_pos = []
 
     html_position = copy(current_pos)
-    tags_to_ignore = ['script']
-    children = section.find_all(recursive=False)
-    tag = section.name
-    text = section.findAll(text=True, recursive=False)
-    text = tp.preprocess_text_html(text)
+    html_position.append(HTMLPosition(section_count, section.name))
 
-    if tag in tags_to_ignore:
-        return []
+    result_list = []
 
-    if not children:
-        if not text == "":
-            html_position.append(HTMLPosition(0, tag))
-            return [{"text": text, "position": html_position}]
+    i = 0
+    for child in section.children:
+        if isinstance(child, NavigableString):
+            child: NavigableString
+            child_pos = copy(html_position)
+            child_pos.append(HTMLPosition(i, 'NavStr'))
+            text = tp.preprocess_text_html(child.text)
 
-    temp_list = []
-    if not text == "":
-        text_pos = copy(html_position)
-        text_pos.append(HTMLPosition(0, tag))
-        temp_list += [{"text": text, "position": text_pos}]
+            if text == '':
+                continue
 
-    html_position.append(HTMLPosition(section_count, tag))
-    section_count = 0
-    for child_section in children:
-        section_count += 1
-        temp_list += build_text_position_mapping(child_section, html_position, section_count)
+            result_list.append(TextPosMapping(text, child_pos))
+        elif isinstance(child, Comment):
+            pass
+        else:
+            if filter_section(child):
+                continue
+            result_list += build_mapping(child, html_position, i)
+            i += 1
 
-    return temp_list
+    return result_list
 
 
 def candidates_filter(filter_category: str, text_position_mapping) -> List[Tuple[str, Any]]:

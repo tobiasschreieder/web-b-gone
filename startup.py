@@ -96,30 +96,15 @@ def main():
     #                                                                 split_type="website")
     # log.info(results_classification)
 
-    # then = datetime.datetime.now()
-    # results_extraction = extraction.evaluate_extraction(
-    #     model_cls_extraction=StructuredTemplateExtractionModel,
-    #     category=Category.NBA_PLAYER,
-    #     train_test_split=0.25,
-    #     max_size=400,
-    #     split_type="website",
-    #     **{"name": "stuc_1", }
-    # )
-    middel = datetime.datetime.now()
-    results_extraction_tree = extraction.evaluate_extraction(
+    results_extraction = extraction.evaluate_extraction(
         model_cls_extraction=StrucTempExtractionModelV3,
         category=Category.NBA_PLAYER,
         train_test_split=0.25,
-        max_size=4000,
+        max_size=400,
         split_type="website",
-        **{"name": "stucTree_3", }
+        **{"name": "stucTree_v6", }
     )
-    now = datetime.datetime.now()
-    # log.info(f'Took {middel - then} for v2')
-    log.info(f'Took {now - middel} for v3')
-    # log.info(results_extraction)
-    log.info(results_extraction_tree)
-    # extraction.create_md_file(results_extraction_tree, {}, 'strucTree_4000')
+    log.info(results_extraction)
 
     # web_ids = []
     # train_ids = []
@@ -128,7 +113,7 @@ def main():
     #     web_ids += ids[1:]
     #     train_ids += ids[:1]
     #
-    # struc_temp_model = StructuredTreeTemplateExtractionModel(Category.NBA_PLAYER, 'tree_v1')
+    # struc_temp_model = StrucTempExtractionModelV3(Category.NBA_PLAYER, 'tree_v4')
     # struc_temp_model.train(train_ids)
     # result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
 

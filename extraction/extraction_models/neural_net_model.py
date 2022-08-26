@@ -12,6 +12,8 @@ class NeuralNetExtractionModel(BaseExtractionModel):
     def __init__(self, category: Category, name: str, version: str):
         super().__init__(category, version)
         self.network = ExtractionNetwork.get(version)(name)
+        self.dir_path = self.dir_path.joinpath(name)
+        self.dir_path.mkdir(parents=True, exist_ok=True)
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """

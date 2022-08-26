@@ -8,9 +8,6 @@ from ..structure_tree_template import StructuredTreeTemplate
 
 cfg = Config.get()
 
-# TODO boilerplate with regex search after -nav nav nav-, ggf header
-# TODO update build_mapping so no comments are returned
-
 
 class StrucTempExtractionModelV3(BaseExtractionModel):
     template: StructuredTreeTemplate

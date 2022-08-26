@@ -119,8 +119,6 @@ class StructuredTemplate:
                 if key == 'category':
                     continue
 
-                # self.log.debug(f'Find best match for attribute {key}')
-                # TODO witch ground truth should be used, currently the longest
                 if len(attr_truth[key]) == 0:
                     continue
 
