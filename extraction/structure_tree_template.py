@@ -73,6 +73,7 @@ class TreeNode:
                 raise ValueError(f'Nodes doesnt exists. Children pos: {node.children.keys()},\n '
                                  f'Position searched: {position}, \n'
                                  f'Position node:     {node.get_position()}')
+        return node
 
     def get_position(self) -> List[HTMLPosition]:
         if self.root:
@@ -138,7 +139,8 @@ class StructuredTreeTemplate:
         self.log.debug(f'Saved to disk under {path}')
 
     def extract(self, web_ids: str, category: Category, k: int = 3,
-                with_score: bool = False) -> List[Dict[str, Union[List[str], List[Tuple[int, str]]]]]:
+                with_score: bool = False, only_perfect_match: bool = False
+                ) -> List[Dict[str, Union[List[str], List[Tuple[int, str]]]]]:
         result = []
         for web_id in web_ids:
             website = Website.load(web_id)
@@ -154,7 +156,8 @@ class StructuredTreeTemplate:
                 filter_category = Category.get_attr_type(key)
                 candidates[key] = candidates_filter(filter_category, text_position_mapping)
 
-            result.append(sort_n_score_candidates(candidates, self, k=k, with_score=with_score))
+            result.append(sort_n_score_candidates(candidates, self, k=k, with_score=with_score,
+                                                  only_perfect_match=only_perfect_match))
         return result
 
     def train(self, web_ids: List[str]) -> None:
@@ -351,18 +354,27 @@ def candidate_filter_number(text: str) -> bool:
 
 def sort_n_score_candidates(candidates: Dict[str, List[Tuple[str, HTMLPosition]]],
                             template: StructuredTreeTemplate, k: int = 3,
-                            with_score: bool = False) -> Dict[str, Union[List[str], List[Tuple[int, str]]]]:
+                            with_score: bool = False, only_perfect_match: bool = False
+                            ) -> Dict[str, Union[List[str], List[Tuple[int, str]]]]:
     scored_candidates = dict()
     for attr in candidates.keys():
         attr_can = []
         for c_text, c_pos in candidates[attr]:
             best_leave = (-100, None)
-            for leave in template.get_attr_root(attr).get_leaves():
-                l_pos = leave.get_position()
-                l_score = position_scoring(l_pos, c_pos) * leave.weight
 
-                if l_score > best_leave[0]:
-                    best_leave = (l_score, leave)
+            if only_perfect_match:
+                try:
+                    leave = template.get_attr_root(attr).traverse(c_pos)
+                    best_leave = (100, leave)
+                except ValueError:
+                    pass
+            else:
+                for leave in template.get_attr_root(attr).get_leaves():
+                    l_pos = leave.get_position()
+                    l_score = position_scoring(l_pos, c_pos) * leave.weight
+
+                    if l_score > best_leave[0]:
+                        best_leave = (l_score, leave)
 
             attr_can.append((best_leave[0], c_text, best_leave[1]))
             attr_can = sorted(attr_can, key=lambda x: x[0], reverse=True)[:k]
@@ -382,6 +394,13 @@ def apply_bit_mask(candidates: Dict[str, List[Tuple[int, str, TreeNode]]],
                     result[attr].append((web_score, text))
                 else:
                     result[attr].append(text)
+                continue
+
+            if leave is None:
+                if with_score:
+                    result[attr].append((web_score, ''))
+                else:
+                    result[attr].append('')
                 continue
 
             bit_mask: List[int] = leave.bit_mask

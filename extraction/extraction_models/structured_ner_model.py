@@ -6,7 +6,7 @@ from classification.preprocessing import Category, Website
 from config import Config
 from .base_model import BaseExtractionModel
 from .. import nerHelper
-from ..structure_helper_v2 import StructuredTemplate
+from ..structure_tree_template import StructuredTreeTemplate
 from .extraction_networks.base_extraction_network import ExtractionNetwork
 from evaluation import text_preprocessing
 
@@ -14,7 +14,7 @@ cfg = Config.get()
 
 
 class CombinedExtractionModel(BaseExtractionModel):
-    template: StructuredTemplate
+    template: StructuredTreeTemplate
     ner_network: ExtractionNetwork
     log = logging.getLogger('CombinedExtModel')
 
@@ -50,7 +50,8 @@ class CombinedExtractionModel(BaseExtractionModel):
         self.load()
 
         ner_result = self.ner_network.predict(web_ids)
-        structure_result = self.template.extract(web_ids, self.category, k=k, with_score=True)
+        structure_result = self.template.extract(web_ids, self.category, k=k,
+                                                 with_score=True, only_perfect_match=True)
 
         EPSILON = 15
 
@@ -107,4 +108,4 @@ class CombinedExtractionModel(BaseExtractionModel):
         """
         self.ner_network.load()
         if self.template is None:
-            self.template = StructuredTemplate.load(self.dir_path)
+            self.template = StructuredTreeTemplate.load(self.dir_path)
