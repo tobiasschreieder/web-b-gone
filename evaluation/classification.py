@@ -1,7 +1,8 @@
+from pathlib import Path
 from typing import List, Dict, Type, Tuple
-
 import numpy as np
-from sklearn.metrics import confusion_matrix, recall_score, precision_score, f1_score
+from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix, recall_score, precision_score, f1_score, ConfusionMatrixDisplay
 
 from classification.category_models import BaseCategoryModel, NeuralNetCategoryModel
 from classification.preprocessing import Category, GroundTruth, Website
@@ -41,14 +42,16 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     # Out of sample prediction
     if len(test_ids) != 0:
         results_classification_test = classification_metrics(model_classification.classification(web_ids=test_ids),
-                                                        [GroundTruth.load(web_id).category for web_id in test_ids])
+                                                             [GroundTruth.load(web_id).category for web_id in test_ids],
+                                                             create_conf=True)
     else:
         results_classification_test = {"recall": None, "precision": None, "f1": None}
 
     # In sample prediction
     if len(train_ids) != 0:
         results_classification_train = classification_metrics(model_classification.classification(web_ids=train_ids),
-                                                        [GroundTruth.load(web_id).category for web_id in train_ids])
+                                                              [GroundTruth.load(web_id).category for web_id in
+                                                               train_ids])
     else:
         results_classification_train = {"recall": None, "precision": None, "f1": None}
 
@@ -119,23 +122,27 @@ def format_data_classification(data: List[Category]) -> List[str]:
     return formatted_data
 
 
-def create_confusion_matrix(pred: List[str], truth: List[str]) -> np.ndarray:
+def create_confusion_matrix(pred: List[str], truth: List[str]):
     """
-    Create Confusion-Matrix
+    Create and save Confusion-Matrix
     :param truth: List with names of predicted categories
     :param pred: List with names of ground truth categories
-    :return: Confusion-Matrix as Array
     """
-    conf = confusion_matrix(y_true=truth, y_pred=pred)
+    ConfusionMatrixDisplay.from_predictions(y_pred=pred, y_true=truth, xticks_rotation=45, normalize="all",
+                                            values_format=".1g")
 
-    return conf
+    name = "working/conf_matrix.png"
+    plt.subplots_adjust(top=0.95, bottom=0.25, left=0, right=1.0)
+    plt.savefig(fname=name, format="png")
 
 
-def classification_metrics(pred: List[Category], truth: List[Category]) -> Dict[str, float]:
+def classification_metrics(pred: List[Category], truth: List[Category], create_conf: bool = False) \
+        -> Tuple[Dict[str, float], np.array]:
     """
     Calculate Recall, Precision and F1 for classification model
     :param pred: List with predicted categories
     :param truth: List with ground-truth categories
+    :param create_conf: Boolean to select if confusion matrix should be saved
     :return: Results as Dict
     """
     pred = format_data_classification(data=pred)
@@ -146,6 +153,9 @@ def classification_metrics(pred: List[Category], truth: List[Category]) -> Dict[
     f1 = round(f1_score(y_true=truth, y_pred=pred, average=AVERAGE), 4)
 
     results = {"recall": recall, "precision": precision, "f1": f1}
+
+    if create_conf:
+        create_confusion_matrix(pred=pred, truth=truth)
 
     return results
 
