@@ -5,7 +5,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from pathlib import Path
 import tensorflow_datasets as tfds
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
+from keras.utils import np_utils
 from config import Config
 from .keyword_categorize import find_class
 from ..preprocessing import GroundTruth, Category, Website
@@ -82,14 +84,39 @@ def get_all_text_from_feature_list(feature_list: List[FeatureHolder], web_ids: L
     return train_dict
 
 
-def get_dict_from_feature_list_inkl_keyword_result(feature_list: List[FeatureHolder], web_ids: List[str]) -> pd.DataFrame:
+def get_df_from_feature_list_inkl_keyword_result(feature_list: List[FeatureHolder], web_ids: List[str]) -> pd.DataFrame:
     train_dict = pd.DataFrame()
     for f in feature_list:
-        #df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'head': [f.head], 'title': [f.title], 'domain_name': [f.domain_name], 'html': [f.html], 'hyperlinks': [f.link], 'text_all': [f.text_all], 'keyword_result': [find_class(f.html)], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
-        df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'html': [f.html], 'text_all': [f.text_all], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
-        #df["true_category"] = df["true_category"].astype("category")
+        #todo inlcude List and keyword results fitting for keras
+        df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'head': [f.head], 'title': [f.title], 'domain_name': [f.domain_name], 'html': [f.html], 'hyperlinks': [f.link], 'text_all': [f.text_all], 'keyword_result': [find_class(f.html)], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
+        #df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'html': [f.html], 'text_all': [f.text_all], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
         train_dict = pd.concat([train_dict, df])
-        #train_dict["true_category"] = pd.Categorical(
-        #    train_dict["true_category"], categories=[1,2,3,4,5,6,7,8,9], ordered=False
-        #)
     return train_dict
+
+def get_df_from_feature_list_str_features(feature_list: List[FeatureHolder], web_ids: List[str]) -> pd.DataFrame:
+    train_dict = pd.DataFrame()
+    for f in feature_list:
+        df = pd.DataFrame({'web_id': [f.web_id], 'url': [f.url], 'html': [f.html], 'text_all': [f.text_all], 'true_category': [int(f.true_category)]}, index=[f.web_id],)
+        train_dict = pd.concat([train_dict, df])
+    return train_dict
+
+def encode_class_values(Y):
+    #src https://machinelearningmastery.com/multi-class-classification-tutorial-keras-deep-learning-library/
+    # encode class values as integers
+    Y_dataset = Y.values
+    encoder = LabelEncoder() #more ordinal
+    encoder.fit(Y_dataset)
+    encoded_Y = encoder.transform(Y)
+    # convert integers to dummy variables (i.e. one hot encoded)
+    dummy_y = np_utils.to_categorical(encoded_Y)
+    return encoder, dummy_y
+
+def prepare_inputs(X_train, X_test):
+    categories = [Category.AUTO,Category.BOOK,Category.CAMERA,Category.JOB,Category.MOVIE,Category.NBA_PLAYER, \
+                  Category.RESTAURANT,Category.UNIVERSITY, Category.NONE] #Category None needed for keyword still
+    categories = categories[lambda x: int(x)]
+    ohe = OneHotEncoder(categories=categories)
+    ohe.fit(X_train) #todo test fit to correct category number
+    X_train_enc = ohe.transform(X_train)
+    X_test_enc = ohe.transform(X_test)
+    return X_train_enc, X_test_enc

@@ -14,15 +14,15 @@ class Category(Enum):
     _init_ = 'value fullname'
     _settings_ = MultiValue
 
-    AUTO = 1, 'Auto'
-    BOOK = 2, 'Book'
-    CAMERA = 3, 'Camera'
-    JOB = 4, 'Job'
-    MOVIE = 5, 'Movie'
-    NBA_PLAYER = 6, 'NBA Player'
-    RESTAURANT = 7, 'Restaurant'
-    UNIVERSITY = 8, 'University'
-    NONE = 9, 'NONE'
+    AUTO = 0, 'Auto'
+    BOOK = 1, 'Book'
+    CAMERA = 2, 'Camera'
+    JOB = 3, 'Job'
+    MOVIE = 4, 'Movie'
+    NBA_PLAYER = 5, 'NBA Player'
+    RESTAURANT = 6, 'Restaurant'
+    UNIVERSITY = 7, 'University'
+    NONE = 8, 'NONE'
 
     @staticmethod
     def get(name: str) -> 'Category':
