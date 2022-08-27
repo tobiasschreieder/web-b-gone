@@ -18,11 +18,11 @@ class CombinedExtractionModel(BaseExtractionModel):
     ner_network: ExtractionNetwork
     log = logging.getLogger('CombinedExtModel')
 
-    struc_path: Path = cfg.working_dir.joinpath('models/extraction/').joinpath('StrucTemp_v2')
+    struc_path: Path = cfg.working_dir.joinpath('models/extraction/').joinpath('StrucTemp_v3')
 
     def __init__(self, category: Category, ner_name: str, struc_name: str):
         super().__init__(category, 'CombinedStrucNer')
-        self.ner_network = ExtractionNetwork.get('NerV1')(ner_name)
+        self.ner_network = ExtractionNetwork.get('NerV3')(ner_name)
         self.template = None
         self.struc_path = self.struc_path.joinpath(struc_name)
 
@@ -108,4 +108,4 @@ class CombinedExtractionModel(BaseExtractionModel):
         """
         self.ner_network.load()
         if self.template is None:
-            self.template = StructuredTreeTemplate.load(self.dir_path)
+            self.template = StructuredTreeTemplate.load(self.struc_path)
