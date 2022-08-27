@@ -323,7 +323,7 @@ def save_wrong_results(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
 
     # Save MD-File
     try:
-        with open(save_name, 'w') as f:
+        with open(save_name, 'w', encoding='utf-8') as f:
             for item in wrong_result_list:
                 f.write("%s\n" % item)
         log.info(f'results saved to {path}')
