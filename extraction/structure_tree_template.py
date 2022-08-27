@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Any, Set, Union, Iterable
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
+from tqdm import tqdm
 
 from classification.preprocessing import Category, Website
 import evaluation.text_preprocessing as tp
@@ -142,9 +143,10 @@ class StructuredTreeTemplate:
                 with_score: bool = False, only_perfect_match: bool = False
                 ) -> List[Dict[str, Union[List[str], List[Tuple[int, str]]]]]:
         result = []
-        for web_id in web_ids:
+        self.log.debug(f'Extract for web_ids')
+        for web_id in tqdm(web_ids, desc='StrucTree Extraction'):
             website = Website.load(web_id)
-            self.log.debug(f'Extract for web_id {web_id}')
+            # self.log.debug(f'Extract for web_id {web_id}')
             with Path(website.file_path).open(encoding='utf-8') as htm_file:
                 soup = BeautifulSoup(htm_file, features="html.parser")
 
@@ -161,8 +163,9 @@ class StructuredTreeTemplate:
         return result
 
     def train(self, web_ids: List[str]) -> None:
-        for web_id in web_ids:
-            self.log.debug(f'Start learning from web_id {web_id}')
+        self.log.debug(f'Start learning from web_ids')
+        for web_id in tqdm(web_ids, desc='StrucTree Training'):
+            # self.log.debug(f'Start learning from web_id {web_id}')
             website = Website.load(web_id)
             with Path(website.file_path).open(encoding='utf-8') as htm_file:
                 soup = BeautifulSoup(htm_file, features="html.parser")

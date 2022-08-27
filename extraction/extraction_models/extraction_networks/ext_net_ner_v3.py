@@ -6,6 +6,7 @@ from typing import List, Dict
 import spacy
 from bs4 import Comment, Tag
 from spacy.training.example import Example
+from tqdm import tqdm
 
 from classification.preprocessing import Website
 from extraction import nerHelper
@@ -48,7 +49,7 @@ class ExtractionNetworkNerV3(BaseExtractionNetwork):
         self.load()
 
         result_list = []
-        for web_id in web_ids:
+        for web_id in tqdm(web_ids, desc='NerV3 Prediction'):
             html_text = nerHelper.get_html_text(web_id, filter_method=tag_filter_regex)
 
             website = Website.load(web_id)
