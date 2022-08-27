@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import random
-from aenum import Enum, MultiValue
+from enum import Enum
 from typing import List, Dict, Union
 
 from config import Config
@@ -11,37 +11,42 @@ faulty_ids = []
 
 
 class Category(Enum):
-    _init_ = 'value fullname'
-    _settings_ = MultiValue
-
-    AUTO = 0, 'Auto'
-    BOOK = 1, 'Book'
-    CAMERA = 2, 'Camera'
-    JOB = 3, 'Job'
-    MOVIE = 4, 'Movie'
-    NBA_PLAYER = 5, 'NBA Player'
-    RESTAURANT = 6, 'Restaurant'
-    UNIVERSITY = 7, 'University'
-    NONE = 8, 'NONE'
+    AUTO = 'Auto'
+    BOOK = 'Book'
+    CAMERA = 'Camera'
+    JOB = 'Job'
+    MOVIE = 'Movie'
+    NBA_PLAYER = 'NBA Player'
+    RESTAURANT = 'Restaurant'
+    UNIVERSITY = 'University'
+    NONE = 'NONE'
 
     @staticmethod
-    def get(name: str) -> 'Category':
+    def get(query: Union[str, int]) -> 'Category':
         """
         TODO
-        :param name:
+        :param query:
         :return:
         """
-        name_low = name.lower()
-        for cat in Category:
-            if name_low == cat.name.lower():
-                return cat
-        else:
-            if name_low == 'nba player' or name_low == 'nbaplayer' or name_low == 'nba_player':
-                return Category.NBA_PLAYER
-        raise ValueError(f'No Category found with name "{name}"')
+        if isinstance(query, str):
+            name_low = query.lower()
+            for cat in Category:
+                if name_low == cat.name.lower():
+                    return cat
+            else:
+                if name_low == 'nba player' or name_low == 'nbaplayer' or name_low == 'nba_player':
+                    return Category.NBA_PLAYER
+            raise ValueError(f'No Category found with name "{query}"')
+        elif isinstance(query, int):
+            all_cat = [cat for cat in Category]
+            if not query < len(all_cat):
+                raise ValueError(f'No Category found with number "{query}"')
+            return all_cat[query]
+
+        raise ValueError(f'No Category found with query "{query}"')
 
     def __int__(self):
-        return self.value
+        return [cat for cat in Category].index(self)
 
     def get_attribute_names(self) -> List[str]:
         """
