@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import random
-from enum import Enum
+from aenum import Enum, MultiValue
 from typing import List, Dict, Union
 
 from config import Config
@@ -11,14 +11,18 @@ faulty_ids = []
 
 
 class Category(Enum):
-    AUTO = 'Auto'
-    BOOK = 'Book'
-    CAMERA = 'Camera'
-    JOB = 'Job'
-    MOVIE = 'Movie'
-    NBA_PLAYER = 'NBA Player'
-    RESTAURANT = 'Restaurant'
-    UNIVERSITY = 'University'
+    _init_ = 'value fullname'
+    _settings_ = MultiValue
+
+    AUTO = 0, 'Auto'
+    BOOK = 1, 'Book'
+    CAMERA = 2, 'Camera'
+    JOB = 3, 'Job'
+    MOVIE = 4, 'Movie'
+    NBA_PLAYER = 5, 'NBA Player'
+    RESTAURANT = 6, 'Restaurant'
+    UNIVERSITY = 7, 'University'
+    NONE = 8, 'NONE'
 
     @staticmethod
     def get(name: str) -> 'Category':
@@ -35,6 +39,9 @@ class Category(Enum):
             if name_low == 'nba player' or name_low == 'nbaplayer' or name_low == 'nba_player':
                 return Category.NBA_PLAYER
         raise ValueError(f'No Category found with name "{name}"')
+
+    def __int__(self):
+        return self.value
 
     def get_attribute_names(self) -> List[str]:
         """

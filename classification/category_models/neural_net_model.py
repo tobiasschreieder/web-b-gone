@@ -12,7 +12,7 @@ class NeuralNetCategoryModel(BaseCategoryModel):
     def __init__(self, name: str, version: str):
         super().__init__()
         self.network = CategoryNetwork.get(version)(name)
-        self.network.load()
+
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
         """
@@ -21,4 +21,5 @@ class NeuralNetCategoryModel(BaseCategoryModel):
         :param kwargs:
         :return:
         """
+        self.network.load()
         return self.network.predict(web_ids)
