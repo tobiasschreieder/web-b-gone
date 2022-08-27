@@ -82,7 +82,7 @@ class ExtractionNetworkNerV3(BaseExtractionNetwork):
         batch_size = 32
 
         training_data = {'classes': [], 'annotations': []}
-        for web_id in web_ids:
+        for web_id in tqdm(web_ids, desc='Preprocess web_ids'):
             html_text = nerHelper.get_html_text(web_id, filter_method=tag_filter_regex)
             # print("html_text: ", html_text)
 
