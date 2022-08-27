@@ -23,7 +23,7 @@ def remove_stop_chars(text: str) -> str:
 
     # remove stopwords from given text
     for sw in stop_words:
-        text = text.replace(sw, "")
+        text = text.replace(sw, " ")
 
     # remove spaces with length > 1 ("   " -> " ")
     text = " ".join(text.split())
