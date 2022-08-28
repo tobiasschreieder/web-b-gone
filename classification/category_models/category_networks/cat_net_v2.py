@@ -12,8 +12,7 @@ from sklearn.metrics import accuracy_score
 
 from .base_category_network import BaseCategoryNetwork
 from ...preprocessing import Category
-from ...preprocessing.categorize_prepare import create_feature_list, get_df_from_feature_list_str_features, \
-    encode_class_values
+from ...preprocessing.categorize_prepare import create_feature_list, get_df_from_feature_list_str_features
 
 tfds.disable_progress_bar()
 """
@@ -32,10 +31,10 @@ class CategoryNetworkV2(BaseCategoryNetwork):
     """
     def predict(self, web_ids: List[str]) -> List[Category]:
         self.load()
-        feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids), web_ids)
+        feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids))
         X = pd.get_dummies(feature_dict.drop(['true_category', 'web_id'], axis=1))
         #y_test = feature_dict['true_category'].apply(lambda x: int(x))
-        enc, y_test = encode_class_values(feature_dict['true_category'])
+        #enc, y_test = encode_class_values(feature_dict['true_category'])
         # loss, accuracy = self.model.predict(feature_dict)
         # print("Accuracy: {:2.2%}".format(binary_accuracy))
         y_hat = self.model.predict(X)
@@ -64,7 +63,7 @@ class CategoryNetworkV2(BaseCategoryNetwork):
     Training length here is only used for testing: epochs=24, batch_size=32
     """
     def train(self, web_ids: List[str]) -> None:
-        feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids), web_ids)
+        feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids))
         X_train = pd.get_dummies(feature_dict.drop(['true_category', 'web_id'], axis=1))
        # encoder, y_train = encode_class_values(feature_dict['true_category'])
         y_train = feature_dict['true_category']

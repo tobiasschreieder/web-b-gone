@@ -1,8 +1,10 @@
 import logging
+from typing import List
 
 from flashtext.keyword import KeywordProcessor
 
 from classification.preprocessing import Category
+from classification.preprocessing.categorize_prepare import get_all_text_from_feature_list
 from config import Config
 
 cfg = Config.get()
@@ -70,6 +72,7 @@ def percentage1(dum0, dumx):
         return 0
     else:
         return ans
+
 
 
 def find_class(text_from_html: str) -> (Category, float):
