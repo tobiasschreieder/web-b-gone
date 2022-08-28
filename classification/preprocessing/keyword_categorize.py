@@ -74,7 +74,6 @@ def percentage1(dum0, dumx):
         return ans
 
 
-
 def find_class(text_from_html: str) -> (Category, float):
     x = str(text_from_html)
     y0 = len(kp0.extract_keywords(x))
@@ -97,42 +96,13 @@ def find_class(text_from_html: str) -> (Category, float):
     per8 = float(percentage1(y0, y8))
     percentage = 0
     category = Category.get("NONE")
-    if y0 == 0:
-        category = Category.get("NONE")
-    else:
-        if per1 >= per2 and per1 >= per3 and per1 >= per4 and per1 >= per5 and per1 >= per6 and per1 >= per7 \
-                and per1 >= per8:
-            category = Category.AUTO
-            percentage = per1
-        elif per2 >= per3 and per2 >= per1 and per2 >= per4 and per2 >= per5 and per2 >= per6 and per2 >= per7 \
-                and per2 >= per8:
-            category = Category.BOOK
-            percentage = per2
-        elif per3 >= per1 and per3 >= per2 and per3 >= per4 and per3 >= per5 and per3 >= per6 and per3 >= per7 \
-                and per3 >= per8:
-            category = Category.CAMERA
-            percentage = per3
-        elif per4 >= per1 and per4 >= per2 and per4 >= per3 and per4 >= per5 and per4 >= per6 and per4 >= per7 \
-                and per4 >= per8:
-            category = Category.JOB
-            percentage = per4
-        elif per5 >= per1 and per5 >= per2 and per5 >= per3 and per5 >= per4 and per5 >= per6 and per5 >= per7 \
-                and per5 >= per8:
-            category = Category.MOVIE
-            percentage = per5
-        elif per6 >= per1 and per6 >= per2 and per6 >= per3 and per6 >= per4 and per6 >= per5 and per6 >= per7 \
-                and per6 >= per8:
-            category = Category.NBA_PLAYER
-            percentage = per6
-        elif per7 >= per1 and per7 >= per2 and per7 >= per3 and per7 >= per4 and per7 >= per5 and per7 >= per6 \
-                and per7 >= per8:
-            category = Category.RESTAURANT
-            percentage = per7
-        elif per8 >= per1 and per8 >= per2 and per8 >= per3 and per8 >= per4 and per8 >= per5 and per8 >= per6 \
-                and per8 >= per7:
-            category = Category.UNIVERSITY
-            percentage = per8
+    if y0 != 0:
+        per_list = [per1, per2, per3, per4, per5, per6, per7, per8]
+        max_per = max(per_list)
+        max_index = per_list.index(max_per)
+        category = Category.get(max_index)
+        percentage = max_per
 
-    return (category, percentage)
+    return category, percentage
 
 # maybe also give out percentage for category for neural net

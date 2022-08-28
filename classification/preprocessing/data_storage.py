@@ -2,6 +2,7 @@ import dataclasses
 import json
 import random
 from enum import Enum
+from pathlib import Path
 from typing import List, Dict, Union
 
 from config import Config
@@ -130,7 +131,7 @@ class Website:
     url: str
     truth: GroundTruth
 
-    file_path: str
+    file_path: Path
 
     @classmethod
     def load(cls, web_id: str) -> 'Website':
