@@ -15,3 +15,4 @@ tensorflow_text
 matplotlib
 tqdm
 keras_nlp
+flashtext

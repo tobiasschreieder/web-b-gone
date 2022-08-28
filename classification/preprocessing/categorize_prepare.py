@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import List, Dict
 
 import pandas as pd
@@ -51,6 +52,7 @@ def create_feature_list(web_ids: List[str]) -> List[FeatureHolder]:
         fh.true_category = website.truth.category
         # https://beautiful-soup-4.readthedocs.io/en/latest/
         # soup = BeautifulSoup(html_doc, 'html.parser') #lxml faster alternative
+        sys.setrecursionlimit(2000)
         with Path(website.file_path).open(encoding='utf-8') as fp:
             soup = BeautifulSoup(fp)
             html_text = soup.prettify(encoding='utf-8')
@@ -62,8 +64,9 @@ def create_feature_list(web_ids: List[str]) -> List[FeatureHolder]:
             fh.head = soup.head
             # soup.get_attribute_list()
             text_all = soup.get_text()
-            fh.text_all = ' '.join(text_all).replace('\n', ' ')
+            fh.text_all = ''.join(text_all).replace('\n', ' ')
             feature_list.append(fh)
+        sys.setrecursionlimit(1000)
     # hyperlinks
     return feature_list
 
