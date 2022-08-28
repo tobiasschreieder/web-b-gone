@@ -135,7 +135,7 @@ def create_confusion_matrix(pred: List[str], truth: List[str], path: Path):
     :param pred: List with names of ground truth categories
     :param path: Path to save MD-File
     """
-    ConfusionMatrixDisplay.from_predictions(y_pred=pred, y_true=truth, xticks_rotation=45, normalize="all",
+    ConfusionMatrixDisplay.from_predictions(y_pred=pred, y_true=truth, xticks_rotation=45, normalize="true",
                                             values_format=".1g")
 
     name = path.joinpath("conf_matrix.png")
