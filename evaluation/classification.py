@@ -1,11 +1,14 @@
 from pathlib import Path
 from typing import List, Dict, Type, Tuple
+import logging
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix, recall_score, precision_score, f1_score, ConfusionMatrixDisplay
+from sklearn.metrics import recall_score, precision_score, f1_score, ConfusionMatrixDisplay
 
 from classification.category_models import BaseCategoryModel, NeuralNetCategoryModel
 from classification.preprocessing import Category, GroundTruth, Website
+
+log = logging.getLogger('Classification')
 
 AVERAGE = "macro"  # determines the type of averaging performed on the data, choose from "micro", "macro", "weighted"
 
@@ -39,11 +42,13 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     else:
         model_classification = model_cls_classification(**model_kwargs)
 
+    path = model_classification.dir_path
+
     # Out of sample prediction
     if len(test_ids) != 0:
         results_classification_test = classification_metrics(model_classification.classification(web_ids=test_ids),
                                                              [GroundTruth.load(web_id).category for web_id in test_ids],
-                                                             create_conf=True)
+                                                             path=path, create_conf=True)
     else:
         results_classification_test = {"recall": None, "precision": None, "f1": None}
 
@@ -51,7 +56,7 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     if len(train_ids) != 0:
         results_classification_train = classification_metrics(model_classification.classification(web_ids=train_ids),
                                                               [GroundTruth.load(web_id).category for web_id in
-                                                               train_ids])
+                                                               train_ids], path=path)
     else:
         results_classification_train = {"recall": None, "precision": None, "f1": None}
 
@@ -62,7 +67,8 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     if save_results:
         parameters = {"Model": model_cls_classification, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split, "Averaging method": AVERAGE}
-        create_md_file(results=results, parameters=parameters)
+
+        create_md_file(results=results, parameters=parameters, path=path)
 
     return results
 
@@ -122,26 +128,35 @@ def format_data_classification(data: List[Category]) -> List[str]:
     return formatted_data
 
 
-def create_confusion_matrix(pred: List[str], truth: List[str]):
+def create_confusion_matrix(pred: List[str], truth: List[str], path: Path):
     """
     Create and save Confusion-Matrix
     :param truth: List with names of predicted categories
     :param pred: List with names of ground truth categories
+    :param path: Path to save MD-File
     """
     ConfusionMatrixDisplay.from_predictions(y_pred=pred, y_true=truth, xticks_rotation=45, normalize="all",
                                             values_format=".1g")
 
-    name = "working/conf_matrix.png"
+    name = path.joinpath("conf_matrix.png")
     plt.subplots_adjust(top=0.95, bottom=0.25, left=0, right=1.0)
     plt.savefig(fname=name, format="png")
 
+    try:
+        plt.savefig(fname=name, format="png")
+        log.info(f'conf_matrix saved to {path}')
+    except FileNotFoundError:
+        plt.savefig(fname="working/conf_matrix.png", format="png")
+        log.info("FileNotFoundError: conf_matrix.png saved at /working")
 
-def classification_metrics(pred: List[Category], truth: List[Category], create_conf: bool = False) \
+
+def classification_metrics(pred: List[Category], truth: List[Category], path: Path, create_conf: bool = False, ) \
         -> Tuple[Dict[str, float], np.array]:
     """
     Calculate Recall, Precision and F1 for classification model
     :param pred: List with predicted categories
     :param truth: List with ground-truth categories
+    :param path: Path to save conf_matrix
     :param create_conf: Boolean to select if confusion matrix should be saved
     :return: Results as Dict
     """
@@ -155,19 +170,19 @@ def classification_metrics(pred: List[Category], truth: List[Category], create_c
     results = {"recall": recall, "precision": precision, "f1": f1}
 
     if create_conf:
-        create_confusion_matrix(pred=pred, truth=truth)
+        create_confusion_matrix(pred=pred, truth=truth, path=path)
 
     return results
 
 
 def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, str], name: str = "",
-                   path: str = "working/"):
+                   path: Path = Path("working/")):
     """
     Create MD-File for extraction results
     :param results: Dictionary with calculated results from extraction model
     :param parameters: Dictionary with all parameter that should be listed in file
     :param name: String with name of considered model
-    :param path: String with path to save MD-File
+    :param path: Path to save MD-File
     """
     # Header
     text = list()
@@ -197,10 +212,16 @@ def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, s
     save_name = "classification_results"
     if name != "":
         save_name += "_" + name
-    save_name = path + save_name + ".md"
+    save_name = path.joinpath(save_name + ".md")
 
     # Save MD-File
-    with open(save_name, 'w') as f:
-        for item in text:
-            f.write("%s\n" % item)
-
+    try:
+        with open(save_name, 'w', encoding='utf-8') as f:
+            for item in text:
+                f.write("%s\n" % item)
+        log.info(f'results saved to {path}')
+    except FileNotFoundError:
+        with open("working/classification_results.md", 'w') as f:
+            for item in text:
+                f.write("%s\n" % item)
+        log.info("FileNotFoundError: classification_results.md saved at /working")
