@@ -1,5 +1,6 @@
 from copy import copy
 from pathlib import Path
+from typing import Set, Iterable, Tuple, List
 
 from bs4 import BeautifulSoup
 from bs4.element import Comment
@@ -82,9 +83,34 @@ def html_text_to_spacy(html_text, attributes):
         value_list = value.split(" ")
         indices = [i for i, x in enumerate(text_list) if x == value_list[0]]
         for i in indices:
-            if text_list[i:i+len(value_list)] == value_list:
+            if text_list[i:i + len(value_list)] == value_list:
                 start_index = sum(text_len_list[:i]) + len(text_len_list[:i])
                 pos = i + len(value_list)
                 end_index = sum(text_len_list[:pos]) + len(text_len_list[:pos]) - 1
                 entities.append((start_index, end_index, attr))
     return {'text': text, 'entities': entities}
+
+
+def filter_spans(spans: Iterable[Tuple[int, int, str]]) -> List[Tuple[int, int, str]]:
+    """
+    Code copied from spacy.utils.filter_spans, but adapted to tuple representation.
+
+    Filter a sequence of spans and remove duplicates or overlaps. Useful for
+    creating named entities (where one token can only be part of one entity) or
+    when merging spans with `Retokenizer.merge`. When spans overlap, the (first)
+    longest span is preferred over shorter spans.
+
+    spans (Iterable[Span]): The spans to filter.
+    RETURNS (List[Span]): The filtered spans.
+    """
+    get_sort_key = lambda span: (span[1] - span[0], -span[0])
+    sorted_spans = sorted(spans, key=get_sort_key, reverse=True)
+    result = []
+    seen_tokens: Set[int] = set()
+    for span in sorted_spans:
+        # Check for end - 1 here because boundaries are inclusive
+        if span[0] not in seen_tokens and span[1] - 1 not in seen_tokens:
+            result.append(span)
+            seen_tokens.update(range(span[0], span[1]))
+    result = sorted(result, key=lambda span: span[0])
+    return result

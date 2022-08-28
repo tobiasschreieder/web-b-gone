@@ -99,6 +99,13 @@ class ExtractionNetworkNerV3(BaseExtractionNetwork):
 
             training_data['annotations'].append(nerHelper.html_text_to_spacy(html_text, new_attributes))
 
+        filtered_anno = []
+        for i in range(len(training_data['annotations'])):
+            ents = training_data['annotations'][i]['entities']
+            filtered_anno.append({'entities': nerHelper.filter_spans(ents),
+                                  'text': training_data['annotations'][i]['text']})
+        training_data['annotations'] = filtered_anno
+
         nlp = spacy.blank("en")  # load a new spacy model
 
         if 'ner' not in nlp.pipe_names:
@@ -115,6 +122,7 @@ class ExtractionNetworkNerV3(BaseExtractionNetwork):
 
         other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner']
         with nlp.disable_pipes(*other_pipes):  # only train NER
+            self.log.info('Start with epoch training')
             for itn in range(epochs):
                 random.shuffle(training_data['annotations'])
                 losses = {}
