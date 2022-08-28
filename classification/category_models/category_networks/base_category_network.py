@@ -18,6 +18,7 @@ log = logging.getLogger('category_network')
 class CategoryNetwork(abc.ABC):
 
     name: str
+    dir_path: Path
 
     def __init__(self, name: str, **kwargs):
         self.name = name

@@ -40,6 +40,7 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     if model_cls_classification == NeuralNetCategoryModel:
         model_classification: NeuralNetCategoryModel = model_cls_classification(**model_kwargs)
         model_classification.network.train(web_ids=train_ids)
+        model_classification.network.save()
     else:
         model_classification = model_cls_classification(**model_kwargs)
 

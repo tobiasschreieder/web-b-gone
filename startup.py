@@ -92,11 +92,11 @@ def main():
 
     # results_extraction = extraction.evaluate_extraction(
     #     model_cls_extraction=NeuralNetExtractionModel,
-    #     category=Category.AUTO,
+    #     category=Category.NBA_PLAYER,
     #     train_test_split=0.7,
-    #     max_size=-1,
+    #     max_size=1000,
     #     split_type="website",
-    #     **{"name": "final_nerv3_auto_website", 'version': 'NerV3'}
+    #     **{"name": "sample1_nerv3_nba_player_website", 'version': 'NerV3'}
     # )
     # log.info(results_extraction)
 
