@@ -11,6 +11,7 @@ from classification.preprocessing import Category, GroundTruth, Website
 log = logging.getLogger('Classification')
 
 AVERAGE = "macro"  # determines the type of averaging performed on the data, choose from "micro", "macro", "weighted"
+SEED = "eval_class"  # Seed to Load data sample
 
 
 def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
@@ -31,7 +32,7 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     # Load and split data
     train_ids: List[str]
     test_ids: List[str]
-    train_ids, test_ids = split_data(train_test_split=train_test_split, split_type=split_type, max_size=max_size)
+    train_ids, test_ids = split_data(train_test_split=train_test_split, split_type=split_type, max_size=max_size, )
 
     # Classification
     model_classification: BaseCategoryModel
@@ -73,21 +74,19 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     return results
 
 
-def split_data(train_test_split: float, split_type: str, max_size: int = -1,
-               seed: str = "eval_class") -> Tuple[List[str], List[str]]:
+def split_data(train_test_split: float, split_type: str, max_size: int = -1) -> Tuple[List[str], List[str]]:
     """
     Method to split dataset with defined split-type
     :param train_test_split: Specify proportion of train data [0; 1]
     :param split_type: String to define Split-Type, Choose between "website" and "domain"
     :param max_size: Size of sample which should be used, -1 -> all data will be used
-    :param seed: String with seed
     :return: Tuple with train-ids and test-ids
     """
     train_ids = list()
     test_ids = list()
 
     if split_type == "website":
-        web_ids: List[str] = Website.get_website_ids(max_size=max_size, rdm_sample=True, seed=seed)
+        web_ids: List[str] = Website.get_website_ids(max_size=max_size, rdm_sample=True, seed=SEED)
 
         split_index = int(len(web_ids) * train_test_split)
         train_ids = web_ids[:split_index]
@@ -103,10 +102,10 @@ def split_data(train_test_split: float, split_type: str, max_size: int = -1,
             train_domains = domains[:split_index]
             test_domains = domains[split_index:]
 
-            train_ids += Website.get_website_ids(max_size=int(cat_size*train_test_split), rdm_sample=True, seed=seed,
+            train_ids += Website.get_website_ids(max_size=int(cat_size*train_test_split), rdm_sample=True, seed=SEED,
                                                  categories=cat, domains=train_domains)
 
-            test_ids += Website.get_website_ids(max_size=int(cat_size*(1-train_test_split)), rdm_sample=True, seed=seed,
+            test_ids += Website.get_website_ids(max_size=int(cat_size*(1-train_test_split)), rdm_sample=True, seed=SEED,
                                                 categories=cat, domains=test_domains)
 
     else:
