@@ -1,6 +1,8 @@
 import random
 from typing import List, Any
 
+from tqdm import tqdm
+
 from .base_model import BaseCategoryModel
 from ..preprocessing import Category
 from ..preprocessing.categorize_prepare import get_all_text_from_feature_list, create_feature_list
@@ -14,13 +16,19 @@ class KeywordModel(BaseCategoryModel):
         self.seed = seed
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
-        features = create_feature_list(web_ids)
+        # features = create_feature_list(web_ids)
+        #
+        # all_text_list = get_all_text_from_feature_list(features)
+        # categories = []
+        # for all_text in all_text_list:
+        #     cat_pair = find_class(all_text)
+        #     categories.append(cat_pair[0])
 
-        all_text_list = get_all_text_from_feature_list(features)
         categories = []
-        for all_text in all_text_list:
-            cat_pair = find_class(all_text)
-            categories.append(cat_pair[0])
+        for web_id in tqdm(web_ids):
+            features = create_feature_list([web_id])
+            all_text = get_all_text_from_feature_list(features)[0]
+            categories.append(find_class(all_text)[0])
 
         return categories
 
