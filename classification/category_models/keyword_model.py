@@ -12,7 +12,7 @@ from ..preprocessing.keyword_categorize import find_class
 class KeywordModel(BaseCategoryModel):
 
     def __init__(self, seed: Any = None):
-        super().__init__()
+        super().__init__('Keyword')
         self.seed = seed
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
@@ -31,4 +31,3 @@ class KeywordModel(BaseCategoryModel):
             categories.append(find_class(all_text)[0])
 
         return categories
-
