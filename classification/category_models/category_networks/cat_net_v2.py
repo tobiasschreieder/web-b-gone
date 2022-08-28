@@ -1,14 +1,11 @@
 import tensorflow_datasets as tfds
-import pandas as pd
 import tensorflow as tf
+import numpy as np
 
 from keras import layers
 from keras import losses
-from keras.layers import TextVectorization, Dense
-from keras.models import Sequential
+from keras.layers import TextVectorization
 from typing import List
-
-from sklearn.metrics import accuracy_score
 
 from .base_category_network import BaseCategoryNetwork
 from ...preprocessing import Category
@@ -20,9 +17,12 @@ Because of my previous problems, I'll keep this so I can always reset to this st
 to the minimum working version.
 """
 class CategoryNetworkV2(BaseCategoryNetwork):
+    EMBEDDING_DIM = 128
+    MAX_TOKENS = 20000
+    EPOCHS = 20
 
     def __init__(self, name: str, **kwargs):
-        super().__init__(name=name, version='v2', description='Working Base Classificator.')
+        super().__init__(name=name, version='v2', description='Using text from html in a TextVectorizationLayer.')
 
     """
     Method loads the saved trained model and predicts the categories for the input web_ids.
@@ -32,19 +32,14 @@ class CategoryNetworkV2(BaseCategoryNetwork):
     def predict(self, web_ids: List[str]) -> List[Category]:
         self.load()
         feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids))
-        X = pd.get_dummies(feature_dict.drop(['true_category', 'web_id'], axis=1))
-        #y_test = feature_dict['true_category'].apply(lambda x: int(x))
-        #enc, y_test = encode_class_values(feature_dict['true_category'])
-        # loss, accuracy = self.model.predict(feature_dict)
-        # print("Accuracy: {:2.2%}".format(binary_accuracy))
+        X = tf.convert_to_tensor(feature_dict['text_all'])
+        Y = feature_dict.pop('true_category')
         y_hat = self.model.predict(X)
-        #print(y_hat)
-        y_hat
-        # y_hat = model.predict(X_test)
-        #y_hat = [0 if val < 0.5 else 1 for val in y_hat] #for 0-1 classes
-        #accuracy_score(y_test, y_hat)
-        # todo reformatting the categorys back from int-matrix (encoded) -> str
-        return y_hat
+        category_result = []
+        for y in y_hat:
+            print(y)
+            category_result.append(Category.get(int(np.argmax(y))))
+        return category_result
 
 
     """
@@ -64,21 +59,38 @@ class CategoryNetworkV2(BaseCategoryNetwork):
     """
     def train(self, web_ids: List[str]) -> None:
         feature_dict = get_df_from_feature_list_str_features(create_feature_list(web_ids))
-        X_train = pd.get_dummies(feature_dict.drop(['true_category', 'web_id'], axis=1))
-       # encoder, y_train = encode_class_values(feature_dict['true_category'])
-        y_train = feature_dict['true_category']
-        model = Sequential()
-        model.add(Dense(units=32, activation='relu', input_dim=len(X_train.columns)))
-        model.add(Dense(units=64, activation='relu'))
-        model.add(Dense(units=64, activation='relu'))
-        model.add(Dense(units=9, activation='softmax'))  # softmax
+        X = tf.convert_to_tensor(feature_dict['text_all'])
+        Y = feature_dict.pop('true_category')
+        vectorize_layer = TextVectorization(
+            standardize='lower_and_strip_punctuation',
+            max_tokens=self.MAX_TOKENS,
+            output_mode='int',
+            output_sequence_length=500)
+        vectorize_layer.adapt(X)
+        text_input = tf.keras.Input(shape=(1,), dtype=tf.string, name='text')
+        x = vectorize_layer(text_input)
+        x = layers.Embedding(self.MAX_TOKENS + 1, self.EMBEDDING_DIM)(x)
+        x = layers.Dropout(0.5)(x)
+
+        # Conv1D + global max pooling
+        x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
+        x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
+        x = layers.GlobalMaxPooling1D()(x)
+
+        # We add a vanilla hidden layer:
+        x = layers.Dense(128, activation='relu')(x)
+        x = layers.Dropout(0.5)(x)
+
+        # We project onto a single unit output layer, and squash it with a sigmoid:
+        predictions = layers.Dense(8, activation='softmax', name='predictions')(x)
+
+        model = tf.keras.Model(text_input, predictions)
 
         model.compile(
             loss=losses.SparseCategoricalCrossentropy(from_logits=True),
             optimizer='adam',
             metrics='accuracy')
-        model.fit(X_train, y_train, epochs=24, batch_size=32)
+        model.fit(X, Y, epochs=self.EPOCHS, batch_size=32)
         self.model = model
         self.save()
-        # (number of inputs + 1 output)/2 = #hiddenLayers
         pass
