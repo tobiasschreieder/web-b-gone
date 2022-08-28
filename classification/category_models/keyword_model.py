@@ -18,7 +18,7 @@ class KeywordModel(BaseCategoryModel):
         categories = []
         for web_id in tqdm(web_ids):
             with Website.load(web_id).file_path.open(encoding='utf-8') as fp:
-                text = ''.join(BeautifulSoup(fp).get_text()).replace('\n', ' ')
+                text = ''.join(BeautifulSoup(fp, features="html.parser").get_text()).replace('\n', ' ')
                 categories.append(find_class(text)[0])
 
         return categories

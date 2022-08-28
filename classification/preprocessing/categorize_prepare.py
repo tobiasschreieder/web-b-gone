@@ -57,10 +57,10 @@ def create_feature_list(web_ids: List[str]) -> List[FeatureHolder]:
             soup = BeautifulSoup(fp)
             html_text = soup.prettify(encoding='utf-8')
             fh.html = html_text
-            for link in soup.find_all('a'):
-                fh.link.append(link.get('href'))
-            for title in soup.find_all('title'):
-                fh.title.append(title)
+            # for link in soup.find_all('a'):
+            #     fh.link.append(link.get('href'))
+            # for title in soup.find_all('title'):
+            #     fh.title.append(title)
             fh.head = soup.head
             # soup.get_attribute_list()
             text_all = soup.get_text()

@@ -1,7 +1,6 @@
 import random
 from typing import List
 from sklearn import tree
-import graphviz
 from sklearn.tree import export_text
 
 from config import Config

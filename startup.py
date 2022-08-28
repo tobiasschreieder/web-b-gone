@@ -4,7 +4,7 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.category_models import RandomCategoryModel
+from classification.category_models import RandomCategoryModel, NeuralNetCategoryModel
 from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
@@ -90,21 +90,33 @@ def main():
 
     log.info('do main stuff')
 
-    # results_classification = classification.evaluate_classification(model_cls_classification=RandomCategoryModel,
-    #                                                                 train_test_split=0.7,
-    #                                                                 max_size=10000,
-    #                                                                 split_type="website")
-    # log.info(results_classification)
+    # results_extraction = extraction.evaluate_extraction(
+    #     model_cls_extraction=NeuralNetExtractionModel,
+    #     category=Category.AUTO,
+    #     train_test_split=0.7,
+    #     max_size=-1,
+    #     split_type="website",
+    #     **{"name": "final_nerv3_auto_website", 'version': 'NerV3'}
+    # )
+    # log.info(results_extraction)
 
-    results_extraction = extraction.evaluate_extraction(
-        model_cls_extraction=NeuralNetExtractionModel,
-        category=Category.NBA_PLAYER,
-        train_test_split=0.7,
-        max_size=-1,
-        split_type="website",
-        **{"name": "paper_1", "version": "NerV3"}
-    )
-    log.info(results_extraction)
+    results_classification = classification.evaluate_classification(model_cls_classification=NeuralNetCategoryModel,
+                                                                    train_test_split=0.7,
+                                                                    max_size=10000,
+                                                                    split_type="website",
+                                                                    name="final_v2_website",
+                                                                    version="V2",
+                                                                    )
+    log.info(results_classification)
+
+    results_classification = classification.evaluate_classification(model_cls_classification=NeuralNetCategoryModel,
+                                                                    train_test_split=0.7,
+                                                                    max_size=10000,
+                                                                    split_type="domain",
+                                                                    name="final_v2_domain",
+                                                                    version="V2",
+                                                                    )
+    log.info(results_classification)
 
     # web_ids = []
     # train_ids = []
