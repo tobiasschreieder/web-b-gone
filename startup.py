@@ -3,12 +3,11 @@ import logging
 import pathlib
 from typing import Any, Dict
 
-from classification.category_models import RandomCategoryModel, NeuralNetCategoryModel
+from classification import NeuralNetCategoryModel, KeywordModel
 from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
-from extraction import StrucTempExtractionModel, RandomExtractionModel, NeuralNetExtractionModel, \
-    CombinedExtractionModel
+from extraction import StrucTempExtractionModel, NeuralNetExtractionModel, CombinedExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -40,16 +39,22 @@ def parse_args():
     parser.add_argument("-cfg", "--config", default=pathlib.Path('config.json'), type=pathlib.Path,
                         dest='config', help='Path to config.json file.')
 
-    parser.add_argument('-njobs', '--number-jobs', type=int, dest='n_jobs', default=-1,
-                        help='Number of processors to use in parallel processes. -1 = all Processors,'
-                             ' -2 = all processors but one')
+    # Dataset setup stuff
+    parser.add_argument('-swde', '--setup-swde', type=pathlib.Path, dest='setup_swde',
+                        help='ZIP file path to perform the SWDE setup and restructuring method on.')
+    parser.add_argument('-reswde', '--setup-restruc-swde')
+    parser.add_argument('-cswde', '--compress-restruc-swde')
 
-    parser.add_argument('-web', '--website', action='store_true', dest='frontend',
-                        help='Start flask web server.')
-    parser.add_argument('-p', '--port', type=int, dest='port', default=5000,
-                        help='Port for web server.')
-    parser.add_argument('-host', '--host', type=str, dest='host', default='0.0.0.0',
-                        help='Host address for web server.')
+    # parser.add_argument('-njobs', '--number-jobs', type=int, dest='n_jobs', default=-1,
+    #                     help='Number of processors to use in parallel processes. -1 = all Processors,'
+    #                          ' -2 = all processors but one')
+
+    # parser.add_argument('-web', '--website', action='store_true', dest='frontend',
+    #                     help='Start flask web server.')
+    # parser.add_argument('-p', '--port', type=int, dest='port', default=5000,
+    #                     help='Port for web server.')
+    # parser.add_argument('-host', '--host', type=str, dest='host', default='0.0.0.0',
+    #                     help='Host address for web server.')
 
     global args
     args = parser.parse_args()
@@ -89,65 +94,58 @@ def main():
 
     log.info('do main stuff')
 
-    extraction.SEED = 'sample3'
-    results_extraction = extraction.evaluate_extraction(
-        model_cls_extraction=RandomExtractionModel,
-        category=Category.NBA_PLAYER,
-        train_test_split=0.7,
-        max_size=2000,
-        split_type="website",
-    )
-    log.info(results_extraction)
-    extraction.SEED = 'sample4'
-    results_extraction = extraction.evaluate_extraction(
-        model_cls_extraction=NeuralNetExtractionModel,
-        category=Category.NBA_PLAYER,
-        train_test_split=0.7,
-        max_size=2000,
-        split_type="website",
-        **{"name": "sample4_nerv3_nba_player_website", 'version': 'NerV3'}
-    )
-    log.info(results_extraction)
-
-    results_classification = classification.evaluate_classification(
-        model_cls_classification=RandomCategoryModel,
-        train_test_split=0.7,
-        max_size=10000,
-        split_type="website",
-        name="final_v2_website",
-        version="V2",
-    )
-    log.info(results_classification)
-
+    # Evaluate a CategoryModel, example with NeuralNetCategoryModel
     results_classification = classification.evaluate_classification(
         model_cls_classification=NeuralNetCategoryModel,
         train_test_split=0.7,
         max_size=10000,
         split_type="domain",
-        name="final_v2_domain",
-        version="V2",
+        name="domain_10k",
+        version="V1",
     )
     log.info(results_classification)
 
-    web_ids = []
-    train_ids = []
-    for dom in Website.get_all_domains(Category.NBA_PLAYER):
-        ids = Website.get_website_ids(max_size=6, categories=Category.NBA_PLAYER, domains=dom)
-        web_ids += ids[2:]
-        train_ids += ids[:2]
+    # Evaluate a ExtractionModel, example with NeuralNetExtractionModel
+    results_extraction = extraction.evaluate_extraction(
+        model_cls_extraction=NeuralNetExtractionModel,
+        category=Category.NBA_PLAYER,
+        train_test_split=0.7,
+        max_size=-1,
+        split_type="website",
+        name="nba_player_website",
+        version='NerV1',
+    )
+    log.info(results_extraction)
 
-    struc_temp_model = StrucTempExtractionModel(Category.NBA_PLAYER, 'tree_v6')
-    struc_temp_model.train(train_ids)
+    # Get a list of website ids
+    web_ids = Website.get_website_ids(max_size=-1, categories=Category.NBA_PLAYER)
+
+    # Categorize website with KeywordModel
+    cat_key = KeywordModel()
+    result = cat_key.classification(web_ids)
+
+    # Categorize website with NeuralNetCategoryModel
+    cat_net = NeuralNetCategoryModel('cat_model_1', 'V1')
+    cat_net.classification(web_ids)
+
+    # Train and extract from a StrucTempExtractionModel
+    struc_temp_model = StrucTempExtractionModel(Category.NBA_PLAYER, 'struc_model_1')
+    struc_temp_model.train(web_ids)
     result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
 
-    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
-    ner_temp_model.train(web_ids)
-    result = ner_temp_model.extract(train_ids)
-    print(result)
+    # Train and extract from a Spacy NeuralNetCategoryModel
+    ner_spacy = NeuralNetExtractionModel(Category.NBA_PLAYER, 'ner_model_1', 'NerV1')
+    ner_spacy.train(web_ids)
+    result = ner_spacy.extract(web_ids)
 
-    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
+    # Train and extract from a own LSTM NeuralNetCategoryModel
+    ner_lstm = NeuralNetExtractionModel(Category.NBA_PLAYER, 'ner_model_1', 'NerV2')
+    ner_lstm.train(web_ids)
+    result = ner_lstm.extract(web_ids)
+
+    # Extract from a CombinedExtractionModel
+    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='ner_model_1', struc_name='struc_model_1')
     result = combine_model.extract(web_ids[:2])
-    print(result)
 
     pass
 
