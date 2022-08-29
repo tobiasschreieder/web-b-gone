@@ -12,6 +12,10 @@ key_processors = None
 
 
 def create_key_processors():
+    """
+    Creates keyword processor that holds all keyword list for the categories.
+    The words result from a topic vocabulary search and some attribute names.
+    """
     keys_auto = ['auto', 'car', 'drive', 'driving', 'highway', 'automobile', 'license plate', 'tire', 'trunk',
                  'hubcap', 'bumper', 'windshield', 'windscreen', 'wheel', 'airbag', 'motor', 'seatbelt',
                  'fuel', 'tank', 'brake', 'engine', 'model']
@@ -44,6 +48,12 @@ def create_key_processors():
 
 
 def percentage1(dum0, dumx):
+    """
+    A function that calculates the percentage, or matching score, of the keyword list of a category to all keywords.
+    :param dum0: amount of keywords matched (all)
+    :param dumx: amount of keywords matched for a specific category
+    :return: percentage as float
+    """
     if dum0 == 0:
         return 0
 
@@ -57,6 +67,12 @@ def percentage1(dum0, dumx):
 
 
 def find_class(text_from_html: str) -> (Category, float):
+    """
+    This method calculates the percentage of keywords matched per category for the text input, and returns the highest
+    matching category.
+    :param text_from_html: text extracted from a html
+    :return: tuple with Category, the highest percentage
+    """
     global key_processors
     if key_processors is None:
         key_processors = create_key_processors()

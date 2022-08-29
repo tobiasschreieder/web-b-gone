@@ -19,6 +19,8 @@ tfds.disable_progress_bar()
 class CategoryNetworkV1(BaseCategoryNetwork):
     """
     Categorize a website using a keras neural net model and the full website text.
+    Embeds a keras TextVectorization layer with lower case conversion and stripping of punctuation.
+    And uses a Convolutional Network to summarize the text into categories.
     """
     EMBEDDING_DIM = 128
     MAX_TOKENS = 20000
@@ -28,6 +30,11 @@ class CategoryNetworkV1(BaseCategoryNetwork):
         super().__init__(name=name, version='v1', description='Using text from html in a TextVectorizationLayer.')
 
     def predict(self, web_ids: List[str]) -> List[Category]:
+        """
+        Predicts category with the saved model.
+        :param web_ids: list of web_ids used for prediction
+        :returns: Category
+        """
         self.load()
         df_x = self.create_x(web_ids)
         x = tf.convert_to_tensor(df_x['text_all'])
@@ -36,6 +43,9 @@ class CategoryNetworkV1(BaseCategoryNetwork):
 
     @staticmethod
     def create_x(web_ids: List[str], mute=False) -> pd.DataFrame:
+        """
+        Optimization: preprocess all web_ids first and extract text from the html
+        """
         text_data = []
         cat_data = []
         id_data = []
@@ -50,6 +60,11 @@ class CategoryNetworkV1(BaseCategoryNetwork):
         return df
 
     def train(self, web_ids: List[str]) -> None:
+        """
+        Train a model: adapt and embed the TextVectorizeLayer, use convolutional layer with global max pooling,
+        a hidden vanilla layer and dropout layers to prevent overfitting.
+        :param web_ids: list of web_ids used for training
+        """
         df_x = self.create_x(web_ids)
         x = tf.convert_to_tensor(df_x['text_all'])
         y = df_x.pop('true_category')
@@ -59,21 +74,21 @@ class CategoryNetworkV1(BaseCategoryNetwork):
             output_mode='int',
             output_sequence_length=500)
         vectorize_layer.adapt(x)
+
         text_input = tf.keras.Input(shape=(1,), dtype=tf.string, name='text')
         x = vectorize_layer(text_input)
         x = layers.Embedding(self.MAX_TOKENS + 1, self.EMBEDDING_DIM)(x)
         x = layers.Dropout(0.5)(x)
 
-        # Conv1D + global max pooling
+        # Conv1D and global max pooling:
         x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
         x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
         x = layers.GlobalMaxPooling1D()(x)
-
-        # We add a vanilla hidden layer:
+        # vanilla hidden layer:
         x = layers.Dense(128, activation='relu')(x)
+        # dropout layer to prevent overfitting, sets 0.5 nodes 0 while training:
         x = layers.Dropout(0.5)(x)
-
-        # We project onto a single unit output layer, and squash it with a sigmoid:
+        # 8 unit output layer for the 8 categories, and squash it with a softmax function:
         predictions = layers.Dense(8, activation='softmax', name='predictions')(x)
 
         model = tf.keras.Model(text_input, predictions)

@@ -10,7 +10,7 @@ from ..preprocessing.keyword_categorize import find_class
 
 class KeywordModel(BaseCategoryModel):
     """
-    Classifies a website using keywords.
+    Classifies a website using keyword matching.
     """
 
     def __init__(self, seed: Any = None):
