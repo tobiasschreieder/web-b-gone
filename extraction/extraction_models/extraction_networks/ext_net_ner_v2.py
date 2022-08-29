@@ -124,7 +124,6 @@ class ExtractionNetworkNerV2(BaseExtractionNetwork):
         y = np.zeros((len(samples), self.MAX_LEN), dtype=np.uint8)
         vocab = self.nlp.vocab
         for i, sentence in enumerate(samples):
-            print(sentence)
             for j, (token, tag) in enumerate(sentence[:self.MAX_LEN]):
                 x[i, j] = vocab.get_vector(token)
                 y[i, j] = tag_index[tag]

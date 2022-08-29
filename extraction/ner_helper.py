@@ -17,7 +17,6 @@ def tag_visible(element):
 
 
 def get_html_text(web_id, filter_method=tag_visible):
-    # print(web_id)
     website = Website.load(web_id)
     with Path(website.file_path).open(encoding='utf-8') as htm_file:
         soup = BeautifulSoup(htm_file, features="html.parser")
@@ -38,7 +37,6 @@ def get_html_text(web_id, filter_method=tag_visible):
                     line_list.append(' '.join(temp_line))
                     temp_line = []
                 line_list.append(line)
-    # print(line_list)
     return line_list
 
 
@@ -75,7 +73,6 @@ def html_text_to_spacy(html_text, attributes):
         elif value:
             pass
         else:
-            # print("nothing there", attr, value)
             continue
         value = value.strip()
         value = value.replace("  ", " ")
