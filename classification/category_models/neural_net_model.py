@@ -6,6 +6,9 @@ from ..preprocessing import Category
 
 
 class NeuralNetCategoryModel(BaseCategoryModel):
+    """
+    Classifies a website using a CategoryNetwork.
+    """
 
     network: CategoryNetwork
 
@@ -15,11 +18,5 @@ class NeuralNetCategoryModel(BaseCategoryModel):
         self.dir_path = self.network.dir_path
 
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
-        """
-        TODO
-        :param web_ids:
-        :param kwargs:
-        :return:
-        """
         self.network.load()
         return self.network.predict(web_ids)

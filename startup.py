@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import logging
 import pathlib
 from typing import Any, Dict
@@ -8,8 +7,8 @@ from classification.category_models import RandomCategoryModel, NeuralNetCategor
 from classification.preprocessing import Category, Website
 from config import Config
 from evaluation import extraction, classification
-from extraction import StrucTempExtractionModelV2, RandomExtractionModel, NeuralNetExtractionModel, \
-    StrucTempExtractionModelV3, CombinedExtractionModel
+from extraction import StrucTempExtractionModel, RandomExtractionModel, NeuralNetExtractionModel, \
+    CombinedExtractionModel
 from utils import setup_logger_handler
 
 args: Dict[str, Any] = None
@@ -90,53 +89,65 @@ def main():
 
     log.info('do main stuff')
 
-    # results_extraction = extraction.evaluate_extraction(
-    #     model_cls_extraction=NeuralNetExtractionModel,
-    #     category=Category.NBA_PLAYER,
-    #     train_test_split=0.7,
-    #     max_size=1000,
-    #     split_type="website",
-    #     **{"name": "sample1_nerv3_nba_player_website", 'version': 'NerV3'}
-    # )
-    # log.info(results_extraction)
+    extraction.SEED = 'sample3'
+    results_extraction = extraction.evaluate_extraction(
+        model_cls_extraction=RandomExtractionModel,
+        category=Category.NBA_PLAYER,
+        train_test_split=0.7,
+        max_size=2000,
+        split_type="website",
+    )
+    log.info(results_extraction)
+    extraction.SEED = 'sample4'
+    results_extraction = extraction.evaluate_extraction(
+        model_cls_extraction=NeuralNetExtractionModel,
+        category=Category.NBA_PLAYER,
+        train_test_split=0.7,
+        max_size=2000,
+        split_type="website",
+        **{"name": "sample4_nerv3_nba_player_website", 'version': 'NerV3'}
+    )
+    log.info(results_extraction)
 
-    results_classification = classification.evaluate_classification(model_cls_classification=NeuralNetCategoryModel,
-                                                                    train_test_split=0.7,
-                                                                    max_size=10000,
-                                                                    split_type="website",
-                                                                    name="final_v2_website",
-                                                                    version="V2",
-                                                                    )
+    results_classification = classification.evaluate_classification(
+        model_cls_classification=RandomCategoryModel,
+        train_test_split=0.7,
+        max_size=10000,
+        split_type="website",
+        name="final_v2_website",
+        version="V2",
+    )
     log.info(results_classification)
 
-    results_classification = classification.evaluate_classification(model_cls_classification=NeuralNetCategoryModel,
-                                                                    train_test_split=0.7,
-                                                                    max_size=10000,
-                                                                    split_type="domain",
-                                                                    name="final_v2_domain",
-                                                                    version="V2",
-                                                                    )
+    results_classification = classification.evaluate_classification(
+        model_cls_classification=NeuralNetCategoryModel,
+        train_test_split=0.7,
+        max_size=10000,
+        split_type="domain",
+        name="final_v2_domain",
+        version="V2",
+    )
     log.info(results_classification)
 
-    # web_ids = []
-    # train_ids = []
-    # for dom in Website.get_all_domains(Category.NBA_PLAYER):
-    #     ids = Website.get_website_ids(max_size=6, categories=Category.NBA_PLAYER, domains=dom)
-    #     web_ids += ids[2:]
-    #     train_ids += ids[:2]
-    #
-    # struc_temp_model = StrucTempExtractionModelV3(Category.NBA_PLAYER, 'tree_v6')
-    # struc_temp_model.train(train_ids)
-    # result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
+    web_ids = []
+    train_ids = []
+    for dom in Website.get_all_domains(Category.NBA_PLAYER):
+        ids = Website.get_website_ids(max_size=6, categories=Category.NBA_PLAYER, domains=dom)
+        web_ids += ids[2:]
+        train_ids += ids[:2]
 
-    # ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
-    # history = ner_temp_model.train(web_ids)
-    # result = ner_temp_model.extract(train_ids)
-    # print(result)
+    struc_temp_model = StrucTempExtractionModel(Category.NBA_PLAYER, 'tree_v6')
+    struc_temp_model.train(train_ids)
+    result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
 
-    # combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
-    # result = combine_model.extract(web_ids[:2])
-    # print(result)
+    ner_temp_model = NeuralNetExtractionModel(Category.NBA_PLAYER, 'text_1', 'NerV1')
+    ner_temp_model.train(web_ids)
+    result = ner_temp_model.extract(train_ids)
+    print(result)
+
+    combine_model = CombinedExtractionModel(Category.NBA_PLAYER, ner_name='text_1', struc_name='all_doms')
+    result = combine_model.extract(web_ids[:2])
+    print(result)
 
     pass
 

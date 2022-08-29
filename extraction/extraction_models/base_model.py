@@ -21,33 +21,40 @@ class BaseExtractionModel(abc.ABC):
 
     def train(self, web_ids: List[str], **kwargs) -> None:
         """
-        TODO
-        :param web_ids:
-        :param kwargs:
-        :return:
+        Train the model on given web_ids.
+
+        :param web_ids: web_ids to train on.
+        :param kwargs: additional parameters.
+        :return: None
         """
         pass
 
     @abc.abstractmethod
-    def extract(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
+    def extract(self, web_ids: List[str], k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
-        TODO
-        :param web_ids:
-        :param kwargs:
-        :return:
+        Extract the attributes from the given Websites.
+        Returns a dictionary for each website where the keys are the extracted attributes
+        and the values are lists with the extracted text.
+
+        :param k: number of extract values per attribute.
+        :param web_ids: websites to extract attribute from.
+        :param kwargs: additional parameters.
+        :return: List of dictionaries with extracted text.
         """
         pass
 
     def save(self) -> None:
         """
-        TODO
-        :return:
+        Save model to disk.
+
+        :return: None
         """
         pass
 
     def load(self) -> None:
         """
-        TODO
-        :return:
+         Load model from disk.
+
+        :return: None
         """
         pass

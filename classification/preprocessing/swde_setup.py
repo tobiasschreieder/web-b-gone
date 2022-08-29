@@ -79,10 +79,12 @@ def _category_size(category: Path):
 
 def compress_restruc_swde(log_min_update: int = 30, log_percent: float = 0.1) -> None:
     """
-    TODO
-    :param log_min_update:
-    :param log_percent:
-    :return:
+    Compress the restructured SWDE to a zip for easy distribution.
+    Saves to created zip file in data directory, because output directory could be too small.
+
+    :param log_min_update: Interval for update logging.
+    :param log_percent: Percent difference for log update.
+    :return: None
     """
     log.info('Compress the restructured SWDE dataset.')
     swde = cfg.data_dir.joinpath('restruc_swde')
@@ -121,7 +123,8 @@ def compress_restruc_swde(log_min_update: int = 30, log_percent: float = 0.1) ->
                             last_cur = cur
                             no_digit = len(str(max_size))
                             log.debug(f'{category_dir.name} {cur:{no_digit}} / {max_size:{no_digit}} '
-                                      f'({cur_percent:.4%}) compressed, {speed:{no_digit+2}.2f} files/sec -> ~ {t_left} left')
+                                      f'({cur_percent:.4%}) compressed, {speed:{no_digit+2}.2f} '
+                                      f'files/sec -> ~ {t_left} left')
 
             log.info('Add category %s to final archive.', category_dir.name)
             restruc_zip.write(zip_path, zip_path.relative_to(cfg.data_dir))
@@ -177,6 +180,7 @@ def restructure_swde(remove_old: bool = False) -> None:
      New directory structure:
         restruc_swde/
         └── < Category file name >/
+            ├── domains.json
             └── W< First two chars from url hash >/
                 └── W< Full 16 char url hash >/
                     ├── groundtruth.json

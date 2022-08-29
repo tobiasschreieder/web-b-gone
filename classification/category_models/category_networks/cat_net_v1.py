@@ -1,44 +1,88 @@
-import random
 from typing import List
-from sklearn import tree
-from sklearn.tree import export_text
 
-from config import Config
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import tensorflow_datasets as tfds
+from bs4 import BeautifulSoup
+from keras import layers
+from keras import losses
+from keras.layers import TextVectorization
+from tqdm import tqdm
 
 from .base_category_network import BaseCategoryNetwork
 from ...preprocessing import Category, Website
-from ...preprocessing.categorize_prepare import get_true_categorys, create_feature_list
+
+tfds.disable_progress_bar()
 
 
 class CategoryNetworkV1(BaseCategoryNetwork):
-    clf: tree.DecisionTreeClassifier()
+    """
+    Categorize a website using a keras neural net model and the full website text.
+    """
+    EMBEDDING_DIM = 128
+    MAX_TOKENS = 20000
+    EPOCHS = 20
 
-    def __init__(self, name: str, **kwargs):
-        super().__init__(name=name, version='v1', description='DecisionTree cart.')
-        ##*, criterion='gini', splitter='best', max_depth=3, min_samples_split=2, min_samples_leaf=1,
-        # min_weight_fraction_leaf=0.0, max_features=None, random_state=0, max_leaf_nodes=None,
-        # min_impurity_decrease=0.0, class_weight=None, ccp_alpha=0.0
-        clf = tree.DecisionTreeClassifier(max_depth=3, random_state=0)
+    def __init__(self, name: str):
+        super().__init__(name=name, version='v1', description='Using text from html in a TextVectorizationLayer.')
 
     def predict(self, web_ids: List[str]) -> List[Category]:
-        website_with_feauture = create_feature_list(web_ids)
-        self.print_tree_text()
-        return self.clf.predict(website_with_feauture)
+        self.load()
+        df_x = self.create_x(web_ids)
+        x = tf.convert_to_tensor(df_x['text_all'])
+        y_hat = self.model.predict(x)
+        return [Category.get(int(np.argmax(y))) for y in y_hat]
+
+    @staticmethod
+    def create_x(web_ids: List[str], mute=False) -> pd.DataFrame:
+        text_data = []
+        cat_data = []
+        id_data = []
+        for web_id in tqdm(web_ids, desc='Preprocessing web_ids', disable=mute):
+            entry = Website.load(web_id)
+            with entry.file_path.open(encoding='utf-8') as fp:
+                text_data.append(''.join(BeautifulSoup(fp, features="html.parser").get_text()).replace('\n', ' '))
+                cat_data.append(int(entry.truth.category))
+                id_data.append(web_id)
+        df = pd.DataFrame(data={'text_all': text_data, 'true_category': cat_data, 'web_id': id_data})
+        df.set_index('web_id', inplace=True)
+        return df
 
     def train(self, web_ids: List[str]) -> None:
-        website_with_feauture = create_feature_list(web_ids)
-        self.clf.fit(website_with_feauture, get_true_categorys(web_ids))
+        df_x = self.create_x(web_ids)
+        x = tf.convert_to_tensor(df_x['text_all'])
+        y = df_x.pop('true_category')
+        vectorize_layer = TextVectorization(
+            standardize='lower_and_strip_punctuation',
+            max_tokens=self.MAX_TOKENS,
+            output_mode='int',
+            output_sequence_length=500)
+        vectorize_layer.adapt(x)
+        text_input = tf.keras.Input(shape=(1,), dtype=tf.string, name='text')
+        x = vectorize_layer(text_input)
+        x = layers.Embedding(self.MAX_TOKENS + 1, self.EMBEDDING_DIM)(x)
+        x = layers.Dropout(0.5)(x)
+
+        # Conv1D + global max pooling
+        x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
+        x = layers.Conv1D(128, 7, padding='valid', activation='relu', strides=3)(x)
+        x = layers.GlobalMaxPooling1D()(x)
+
+        # We add a vanilla hidden layer:
+        x = layers.Dense(128, activation='relu')(x)
+        x = layers.Dropout(0.5)(x)
+
+        # We project onto a single unit output layer, and squash it with a sigmoid:
+        predictions = layers.Dense(8, activation='softmax', name='predictions')(x)
+
+        model = tf.keras.Model(text_input, predictions)
+
+        model.compile(
+            loss=losses.SparseCategoricalCrossentropy(from_logits=True),
+            optimizer='adam',
+            metrics='accuracy')
+        model.fit(x, y, epochs=self.EPOCHS, batch_size=32)
+        self.model = model
+        self.save()
         pass
-
-    def plot(self):
-        tree.plot_tree(self.clf)
-
-    ##   def export_plot_graphviz(self):
-    #       dot_data = tree.export_graphviz(self.clf, out_file=Config.output_dir + '')
-    #       graph = graphviz.Source(dot_data)
-    #       graph.render("iris")
-
-    def print_tree_text(self):
-        tree_text = export_text(self.clf, feature_names=['web_id', 'html', 'url', 'head', 'title', 'link',
-                                                         'largest_content', 'domain_name', 'text_all'])
-        print(tree_text)

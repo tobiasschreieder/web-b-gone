@@ -25,9 +25,11 @@ class Category(Enum):
     @staticmethod
     def get(query: Union[str, int]) -> 'Category':
         """
-        TODO
-        :param query:
-        :return:
+        Get a category from a str or an int.
+
+        :param query: str or int to describe category
+        :return: found category
+        :raises ValueError: if no category is found for given query.
         """
         if isinstance(query, str):
             name_low = query.lower()
@@ -51,8 +53,9 @@ class Category(Enum):
 
     def get_attribute_names(self) -> List[str]:
         """
-        TODO
-        :return:
+        Get the attributes for this category.
+
+        :return: List of attribute names for this category.
         """
         att_name = {'Auto': ['model', 'price', 'engine', 'fuel_economy'],
                     'Book': ['title', 'author', 'isbn_13', 'publisher', 'publication_date'],
@@ -85,6 +88,8 @@ class Category(Enum):
             return 'name'
         elif attr_name in date:
             return 'date'
+        elif attr_name in rest:
+            return 'rest'
         else:
             return 'other'
 
@@ -97,9 +102,11 @@ class GroundTruth:
     @classmethod
     def load(cls, web_id: str) -> 'GroundTruth':
         """
-        TODO
-        :param web_id:
-        :return:
+        Load the GroundTruth for the given web_id from disk.
+
+        :param web_id: web_id to load GroundTruth from.
+        :return: loaded GroundTruth.
+        :raises ValueError: if web_id doesn't exist.
         """
         rswde = cfg.data_dir.joinpath('restruc_swde/')
         for category in rswde.iterdir():
@@ -136,9 +143,11 @@ class Website:
     @classmethod
     def load(cls, web_id: str) -> 'Website':
         """
-        TODO
-        :param web_id:
-        :return:
+        Load the Website for the given web_id from disk.
+
+        :param web_id: web_id to load Website from.
+        :return: loaded Website.
+        :raises ValueError: if web_id doesn't exist.
         """
         rswde = cfg.data_dir.joinpath('restruc_swde/')
         for category in rswde.iterdir():
@@ -256,9 +265,10 @@ class Website:
     @staticmethod
     def get_all_domains(category: Category) -> List[str]:
         """
-        TODO
-        :param category:
-        :return:
+        Get all domains for a given category.
+
+        :param category: Category to get domains from.
+        :return: List of domain name strs.
         """
         for category_dir in cfg.data_dir.joinpath('restruc_swde').iterdir():
             try:

@@ -16,18 +16,21 @@ def _get_rdm_words(text: str) -> str:
 
 
 class RandomExtractionModel(BaseExtractionModel):
+    """
+    ExtractionModel extracting random words from the HTML.
+    """
 
     def __init__(self, category: Category, seed: Any = None):
+        """
+        Create RandomExtractionModel for a category.
+
+        :param category: Category for extraction.
+        :param seed: Seed for the randomizer
+        """
         super().__init__(category, 'rdm_model')
         self.seed = seed
 
     def extract(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
-        """
-        TODO
-        :param web_ids:
-        :param kwargs:
-        :return:
-        """
         if self.seed is not None:
             random.seed(self.seed)
 

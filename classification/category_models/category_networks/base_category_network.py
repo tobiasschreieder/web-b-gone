@@ -25,18 +25,31 @@ class CategoryNetwork(abc.ABC):
 
     @abc.abstractmethod
     def train(self, web_ids: List[str]) -> None:
+        """
+        Train network with given websites.
+
+        :param web_ids: Website to train on.
+        :return: None
+        """
         pass
 
     @abc.abstractmethod
     def predict(self, web_ids: List[str]) -> List[Category]:
+        """
+        Predict extracted text for given websites.
+
+        :param web_ids: websites to extract attribute from.
+        :return: List of predicted Categories.
+        """
         pass
 
     @staticmethod
     def get(version: str) -> Type['CategoryNetwork']:
         """
-        TODO
-        :param version:
-        :return:
+        Get the class of the CategoryNetwork with the specified version.
+
+        :param version: Version of the CategoryNetwork class
+        :return: class of CategoryNetwork
         """
         found_versions = []
         # Find module with correct CategoryNetwork class and import it.
@@ -80,8 +93,10 @@ class BaseCategoryNetwork(CategoryNetwork, ABC):
 
     def load(self) -> None:
         """
-        TODO
-        :return:
+        Load the keras model from disk.
+
+        :return: None
+        :raises ValueError: if the model doesn't exist.
         """
         load_path = self.dir_path.joinpath('model.hS')
         if not load_path.exists():
@@ -90,8 +105,10 @@ class BaseCategoryNetwork(CategoryNetwork, ABC):
 
     def save(self) -> None:
         """
-        TODO
-        :return:
+        Saves the keras model to disk.
+
+        :return: None
+        :raises ValueError: if the model is None (not trained).
         """
         if self.model is None:
             raise ValueError(f"No model to save. Model '{self.name}' for version {self.version} not set.")

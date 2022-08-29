@@ -103,8 +103,7 @@ def filter_spans(spans: Iterable[Tuple[int, int, str]]) -> List[Tuple[int, int, 
     spans (Iterable[Span]): The spans to filter.
     RETURNS (List[Span]): The filtered spans.
     """
-    get_sort_key = lambda span: (span[1] - span[0], -span[0])
-    sorted_spans = sorted(spans, key=get_sort_key, reverse=True)
+    sorted_spans = sorted(spans, key=lambda x: (x[1] - x[0], -x[0]), reverse=True)
     result = []
     seen_tokens: Set[int] = set()
     for span in sorted_spans:
@@ -112,5 +111,5 @@ def filter_spans(spans: Iterable[Tuple[int, int, str]]) -> List[Tuple[int, int, 
         if span[0] not in seen_tokens and span[1] - 1 not in seen_tokens:
             result.append(span)
             seen_tokens.update(range(span[0], span[1]))
-    result = sorted(result, key=lambda span: span[0])
+    result = sorted(result, key=lambda x: x[0])
     return result

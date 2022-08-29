@@ -1,21 +1,48 @@
 import logging
 import random
+import re
 from typing import List, Dict
 
 import spacy
-from spacy.training.example import Example
+from bs4 import Comment, Tag
+from spacy.training import Example
+from tqdm import tqdm
 
 from classification.preprocessing import Website
-from extraction import nerHelper
+from extraction import ner_helper
 from .base_extraction_network import BaseExtractionNetwork
 
 
+def tag_filter_regex(element):
+    if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
+        return False
+    if isinstance(element, Comment):
+        return False
+
+    if isinstance(element, Tag):
+        reg = re.compile('nav')
+
+        if 'class' in element.attrs.keys():
+            if any(reg.search(html_class) for html_class in element.attrs['class']):
+                return False
+
+        if 'id' in element.attrs.keys():
+            if reg.search(element.attrs['id']):
+                return False
+
+    return True
+
+
 class ExtractionNetworkNerV1(BaseExtractionNetwork):
+    """
+    NER-Extraction with spaCy.
+    Train a custom spacy model to extract text.
+    """
 
     model: spacy.Language
     log = logging.getLogger('ExtNet-NerV1')
 
-    def __init__(self, name: str, **kwargs):
+    def __init__(self, name: str):
         super().__init__(name=name, version='NerV1',
                          description='Try to extract information with custom SPACY-Model')
         self.nlp = spacy.load('en_core_web_md')
@@ -26,8 +53,8 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         self.load()
 
         result_list = []
-        for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
+        for web_id in tqdm(web_ids, desc='NerV1 Prediction'):
+            html_text = ner_helper.get_html_text(web_id, filter_method=tag_filter_regex)
 
             website = Website.load(web_id)
             attributes = website.truth.attributes
@@ -38,7 +65,6 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
                 id_results[str(attr)] = []
 
             doc = self.model(' '.join(html_text))
-            # doc = self.model(html_text)
             for ent in doc.ents:
                 id_results[ent.label_].append(ent.text)
 
@@ -48,7 +74,6 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
                                         key=id_results[label].count,
                                         reverse=True)
                     id_results[label] = lst_sorted[0:k]
-                    # id_results[label] = [max(set(id_results[label]), key=id_results[label].count)]
 
             result_list.append(id_results)
 
@@ -59,9 +84,9 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         batch_size = 32
 
         training_data = {'classes': [], 'annotations': []}
-        for web_id in web_ids:
-            html_text = nerHelper.get_html_text(web_id)
-            # print("html_text: ", html_text)
+        attributes = dict()
+        for web_id in tqdm(web_ids, desc='Preprocess web_ids'):
+            html_text = ner_helper.get_html_text(web_id, filter_method=tag_filter_regex)
 
             website = Website.load(web_id)
             attributes = website.truth.attributes
@@ -74,7 +99,14 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
                 else:
                     new_attributes[str(attr)] = []
 
-            training_data['annotations'].append(nerHelper.html_text_to_spacy(html_text, new_attributes))
+            training_data['annotations'].append(ner_helper.html_text_to_spacy(html_text, new_attributes))
+
+        filtered_anno = []
+        for i in range(len(training_data['annotations'])):
+            ents = training_data['annotations'][i]['entities']
+            filtered_anno.append({'entities': ner_helper.filter_spans(ents),
+                                  'text': training_data['annotations'][i]['text']})
+        training_data['annotations'] = filtered_anno
 
         nlp = spacy.blank("en")  # load a new spacy model
 
@@ -92,6 +124,7 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
 
         other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner']
         with nlp.disable_pipes(*other_pipes):  # only train NER
+            self.log.info('Start with epoch training')
             for itn in range(epochs):
                 random.shuffle(training_data['annotations'])
                 losses = {}
@@ -108,11 +141,23 @@ class ExtractionNetworkNerV1(BaseExtractionNetwork):
         self.save()
 
     def load(self) -> None:
+        """
+        Load the spacy model from disk.
+
+        :return: None
+        :raises ValueError: if the model doesn't exist.
+        """
         if not self.dir_path.exists():
             raise ValueError(f"The model '{self.name}' for version {self.version} doesn't exit.")
         self.model = spacy.load(self.dir_path)
 
     def save(self) -> None:
+        """
+        Saves the spacy model to disk.
+
+        :return: None
+        :raises ValueError: if the model is None (not trained).
+        """
         if self.model is None:
             raise ValueError(f"No model to save. Model '{self.name}' for version {self.version} not set.")
         self.model.meta['name'] = self.name

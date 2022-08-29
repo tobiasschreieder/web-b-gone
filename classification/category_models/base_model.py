@@ -20,9 +20,10 @@ class BaseCategoryModel(abc.ABC):
     @abc.abstractmethod
     def classification(self, web_ids: List[str], **kwargs) -> List[Category]:
         """
-        TODO
-        :param web_ids:
-        :param kwargs:
-        :return:
+        Perform the classification of given web_ids.
+
+        :param web_ids: List of web_ids for classification
+        :param kwargs: additional parameter
+        :return: List of predicted Categories
         """
         pass

@@ -1,28 +1,39 @@
 import logging
-from typing import List, Dict
 from pathlib import Path
+from typing import List, Dict
 
-from classification.preprocessing import Category, Website
+from classification.preprocessing import Category
 from config import Config
-from .base_model import BaseExtractionModel
-from .. import nerHelper
-from ..structure_tree_template import StructuredTreeTemplate
-from .extraction_networks.base_extraction_network import ExtractionNetwork
 from evaluation import text_preprocessing
+from .base_model import BaseExtractionModel
+from .extraction_networks.base_extraction_network import ExtractionNetwork
+from ..structure_tree_template import StructuredTreeTemplate
 
 cfg = Config.get()
 
 
 class CombinedExtractionModel(BaseExtractionModel):
+    """
+    Combined Template-NER-Model.
+    Combine StructuredTreeTemplate and NERV1 ExtractionNetwork
+    """
+
     template: StructuredTreeTemplate
     ner_network: ExtractionNetwork
     log = logging.getLogger('CombinedExtModel')
 
-    struc_path: Path = cfg.working_dir.joinpath('models/extraction/').joinpath('StrucTemp_v3')
+    struc_path: Path = cfg.working_dir.joinpath('models/extraction/').joinpath('StrucTemp')
 
     def __init__(self, category: Category, ner_name: str, struc_name: str):
+        """
+        Create CombinedExtractionModel for a category.
+
+        :param category: Category for extraction.
+        :param ner_name: Name of the ExtractionNetwork NerV1
+        :param struc_name: Name of the StructuredTreeTemplate
+        """
         super().__init__(category, 'CombinedStrucNer')
-        self.ner_network = ExtractionNetwork.get('NerV3')(ner_name)
+        self.ner_network = ExtractionNetwork.get('NerV1')(ner_name)
         self.template = None
         self.struc_path = self.struc_path.joinpath(struc_name)
 
@@ -34,16 +45,13 @@ class CombinedExtractionModel(BaseExtractionModel):
         :return: None
         """
         raise NotImplementedError(f'CombinedExtractionModel needs pretrained models of '
-                                  f'StructuredTemplate and ExtractionNetwork version: NerV2 to work. ')
+                                  f'StructuredTemplate and ExtractionNetwork version: NerV1 to work. ')
 
-    def extract(self, web_ids: List[str], n_jobs: int = -1, k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
+    def extract(self, web_ids: List[str], k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
         """
         Extract information from websites using the combined approach.
 
         :param web_ids: List of website ids for extraction
-        :param n_jobs: the number of processes to use, if -1 use all,
-            if < -1 use max_processes+1+n_jobs, example n_jobs = -2 -> use all processors except 1.
-            see joblib.parallel.Parallel
         :param k: number of results per attribute, default: 3
         :return: Extracted information
         """
@@ -53,7 +61,7 @@ class CombinedExtractionModel(BaseExtractionModel):
         structure_result = self.template.extract(web_ids, self.category, k=k,
                                                  with_score=True, only_perfect_match=True)
 
-        EPSILON = 15
+        epsilon = 15
 
         combine_result = []
         for id_result_ner, id_result_struct in zip(ner_result, structure_result):
@@ -64,7 +72,7 @@ class CombinedExtractionModel(BaseExtractionModel):
                 structure_result = id_result_struct[attr]
                 id_result[attr] = []
                 for score, candiate_struc in structure_result:
-                    if not candiate_struc or score < EPSILON:
+                    if not candiate_struc or score < epsilon:
                         continue
                     if isinstance(candiate_struc, str):
                         candiate_struc = text_preprocessing.preprocess_text_html(candiate_struc)
@@ -86,26 +94,9 @@ class CombinedExtractionModel(BaseExtractionModel):
 
             combine_result.append(id_result)
 
-            '''
-            if good_matches > len(id_result_ner)/2:
-                new_dict = {}
-                for attr in id_result_struct:
-                    new_dict[attr] = []
-                    for tupel in id_result_struct[attr]:
-                        if tupel[1] and tupel[0] > EPSILON/2:
-                            new_dict[attr].append(tupel[1])
-                combine_result.append(new_dict)
-            else:
-                combine_result.append(id_result)
-            '''
-
         return combine_result
 
     def load(self) -> None:
-        """
-        TODO
-        :return:
-        """
         self.ner_network.load()
         if self.template is None:
             self.template = StructuredTreeTemplate.load(self.struc_path)

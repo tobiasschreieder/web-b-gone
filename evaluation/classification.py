@@ -1,6 +1,7 @@
+import logging
 from pathlib import Path
 from typing import List, Dict, Type, Tuple
-import logging
+
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import recall_score, precision_score, f1_score, ConfusionMatrixDisplay
@@ -100,6 +101,8 @@ def split_data(train_test_split: float, split_type: str, max_size: int = -1) -> 
 
         cat_size = int(max_size / len(categories))
         for cat in categories:
+            if cat == Category.NONE:
+                continue
             domains = Website.get_all_domains(category=cat)
             split_index = int(len(domains) * train_test_split)
             train_domains = domains[:split_index]

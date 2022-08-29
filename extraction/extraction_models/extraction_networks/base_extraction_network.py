@@ -19,22 +19,47 @@ class ExtractionNetwork(abc.ABC):
     name: str
 
     def __init__(self, name: str, **kwargs):
+        """
+        Create a ExtractionNetwork. Don't use this to get an ExtractionNetwork,
+        use ExtractionNetwork.get(version) instead.
+
+        :param name: name of the network.
+        :param kwargs:
+        """
         self.name = name
 
     @abc.abstractmethod
     def train(self, web_ids: List[str], **kwargs) -> None:
+        """
+        Train network with given websites.
+
+        :param web_ids: Website to train on.
+        :param kwargs:  additional parameters.
+        :return: None
+        """
         pass
 
     @abc.abstractmethod
-    def predict(self, web_ids: List[str], **kwargs) -> List[Dict[str, List[str]]]:
+    def predict(self, web_ids: List[str], k: int = 3, **kwargs) -> List[Dict[str, List[str]]]:
+        """
+        Predict extracted text for given websites.
+        Returns a dictionary for each website where the keys are the extracted attributes
+        and the values are lists with the extracted text.
+
+        :param k: number of extract values per attribute.
+        :param web_ids: websites to extract attribute from.
+        :param kwargs: additional parameters.
+        :return: List of dictionaries with extracted text.
+        """
         pass
 
     @staticmethod
     def get(version: str) -> Type['ExtractionNetwork']:
         """
-        TODO
-        :param version:
-        :return:
+        Get the class of the ExtractionNetwork with the specified version.
+
+        :param version: Version of the ExtractionNetwork class
+        :return: class of ExtractionNetwork
         """
         found_versions = []
         # Find module with correct ExtractionNetwork class and import it.
@@ -78,8 +103,10 @@ class BaseExtractionNetwork(ExtractionNetwork, ABC):
 
     def load(self) -> None:
         """
-        TODO
-        :return:
+        Load the keras model from disk.
+
+        :return: None
+        :raises ValueError: if the model doesn't exist.
         """
         load_path = self.dir_path.joinpath('model.hS')
         if not load_path.exists():
@@ -88,8 +115,10 @@ class BaseExtractionNetwork(ExtractionNetwork, ABC):
 
     def save(self) -> None:
         """
-        TODO
-        :return:
+        Saves the keras model to disk.
+
+        :return: None
+        :raises ValueError: if the model is None (not trained).
         """
         if self.model is None:
             raise ValueError(f"No model to save. Model '{self.name}' for version {self.version} not set.")

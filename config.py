@@ -9,7 +9,6 @@ lock = threading.RLock()
 
 class Config:
 
-    # data_dir: Path = Path('H:/web-b-gone/data/')
     data_dir: Path = Path('data/')
     output_dir: Path = Path('out/')
     working_dir: Path = Path('working/')
@@ -20,11 +19,9 @@ class Config:
 
     @classmethod
     def get(cls) -> 'Config':
-        # print(f'get cfg {threading.current_thread().name}-{threading.current_thread().ident}')
         lock.acquire()
         cfg = cls()
         if Config._cfg is not None:
-            # print(f'{threading.current_thread().name}-{threading.current_thread().ident} cfg exists')
             return Config._cfg
         if Config._save_path.exists():
             try:
@@ -34,12 +31,10 @@ class Config:
                 cfg.output_dir = Path(cfg_json.get('output_dir', cfg.output_dir))
                 cfg.working_dir = Path(cfg_json.get('working_dir', cfg.working_dir))
                 log.debug('Config loaded')
-                # print(f'{threading.current_thread().name}-{threading.current_thread().ident} cfg loaded')
             except json.JSONDecodeError:
                 pass
         else:
             log.debug('Create new config')
-            # print(f'{threading.current_thread().name}-{threading.current_thread().ident} new cfg')
 
         cfg.save()
         Config._cfg = cfg

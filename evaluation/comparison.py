@@ -1,5 +1,5 @@
-from typing import List
 from collections import Counter
+from typing import List
 
 from evaluation import text_preprocessing
 
@@ -78,7 +78,7 @@ def f1_single(truth: List[List[str]], predicted_answer: List[str], iterator: int
     :param k: Integer to select prediction
     :return: F1-Score
     """
-    f1 = 0
+    f1_score = 0
 
     if len(predicted_answer) != 0:
         predicted_answer = predicted_answer[k]
@@ -98,9 +98,9 @@ def f1_single(truth: List[List[str]], predicted_answer: List[str], iterator: int
 
         precision = 1.0 * num_same / num_predicted_answer_tokens
         recall = 1.0 * num_same / num_answer_tokens
-        f1 = max(2 * precision * recall / (precision + recall), f1)
+        f1_score = max(2 * precision * recall / (precision + recall), f1_score)
 
-    return f1
+    return f1_score
 
 
 def partial_match(truth: List[List[str]], pred: List[List[str]], top_k: int = 1) -> float:

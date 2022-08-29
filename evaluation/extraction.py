@@ -1,12 +1,11 @@
 import copy
+import logging
 from pathlib import Path
 from typing import List, Dict, Type, Tuple
-import logging
 
 from classification.preprocessing import Category, GroundTruth, Website
 from evaluation import comparison, text_preprocessing, dataset
-from extraction.extraction_models import BaseExtractionModel
-from extraction.extraction_models.structured_ner_model import CombinedExtractionModel
+from extraction.extraction_models import BaseExtractionModel, CombinedExtractionModel
 
 log = logging.getLogger('Extraction')
 
@@ -48,8 +47,8 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         results_extraction_test = extraction_metrics(prediction_oos,
                                                      [GroundTruth.load(web_id).attributes for web_id in test_ids])
     else:
-        results_extraction_test = {"exact_match_top_1": None, "exact_match_top_3": None,
-                                   "f1_top_1": None, "f1_top_3": None}
+        results_extraction_test = {'overall': {"exact_match_top_1": None, "exact_match_top_3": None,
+                                   "f1_top_1": None, "f1_top_3": None}}
 
     # In sample prediction
     if len(train_ids) != 0:
@@ -57,8 +56,8 @@ def evaluate_extraction(model_cls_extraction: Type[BaseExtractionModel],
         results_extraction_train = extraction_metrics(prediction_is,
                                                       [GroundTruth.load(web_id).attributes for web_id in train_ids])
     else:
-        results_extraction_train = {"exact_match_top_1": None, "exact_match_top_3": None,
-                                    "f1_top_1": None, "f1_top_3": None}
+        results_extraction_train = {'overall': {"exact_match_top_1": None, "exact_match_top_3": None,
+                                    "f1_top_1": None, "f1_top_3": None}}
 
     # Combine results
     results = {"out of sample": results_extraction_test, "in sample": results_extraction_train}
@@ -204,8 +203,8 @@ def extraction_metrics(pred: List[Dict[str, List[str]]], truth: List[Dict[str, L
     return results
 
 
-def create_md_file(results: Dict[str, Dict[str, float]], parameters: Dict[str, str], name: str = "",
-                   path: Path = Path("working/")):
+def create_md_file(results: Dict[str, Dict[str, Dict[str, Dict[str, float]]]], parameters: Dict[str, str],
+                   name: str = "", path: Path = Path("working/")):
     """
     Create MD-File for extraction results
     :param results: Dictionary with calculated results from extraction model
