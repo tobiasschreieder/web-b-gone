@@ -4,7 +4,8 @@ import pathlib
 from typing import Any, Dict
 
 from classification import NeuralNetCategoryModel, KeywordModel
-from classification.preprocessing import Category, Website
+from classification.preprocessing import Category, Website, setup_swde_dataset, restructure_swde, \
+    extract_restruc_swde, compress_restruc_swde
 from config import Config
 from evaluation import extraction, classification
 from extraction import StrucTempExtractionModel, NeuralNetExtractionModel, CombinedExtractionModel
@@ -41,20 +42,13 @@ def parse_args():
 
     # Dataset setup stuff
     parser.add_argument('-swde', '--setup-swde', type=pathlib.Path, dest='setup_swde',
-                        help='ZIP file path to perform the SWDE setup and restructuring method on.')
-    parser.add_argument('-reswde', '--setup-restruc-swde')
-    parser.add_argument('-cswde', '--compress-restruc-swde')
-
-    # parser.add_argument('-njobs', '--number-jobs', type=int, dest='n_jobs', default=-1,
-    #                     help='Number of processors to use in parallel processes. -1 = all Processors,'
-    #                          ' -2 = all processors but one')
-
-    # parser.add_argument('-web', '--website', action='store_true', dest='frontend',
-    #                     help='Start flask web server.')
-    # parser.add_argument('-p', '--port', type=int, dest='port', default=5000,
-    #                     help='Port for web server.')
-    # parser.add_argument('-host', '--host', type=str, dest='host', default='0.0.0.0',
-    #                     help='Host address for web server.')
+                        help='ZIP file path to perform the SWDE setup method on.')
+    parser.add_argument('-reswde', '--setup-restruc-swde', action='store_true', dest='restruc_swde',
+                        help='Perform the restructuring of the SWDE dataset.')
+    parser.add_argument('-cswde', '--compress-restruc-swde', action='store_true', dest='compress_re_swde',
+                        help='Compress the restructured SWDE dateset to a ZIP')
+    parser.add_argument('-e', '--extract-restruc-swde', type=pathlib.Path, dest='extract_re_swde',
+                        help='Extract the compressed restructured SWDE dateset from a ZIP')
 
     global args
     args = parser.parse_args()
@@ -78,12 +72,34 @@ def parse_args():
 
 
 def handle_args():
-    # if args['frontend']:
-    #     log.info('Start flask frontend')
-    #     start_server(host=args['host'], port=args['port'])
-    #     sys.exit(0)
+    should_exit = False
+    if args['setup_swde']:
+        should_exit = True
+        log.info('Setup the SWDE dataset from ZIP file %s', args['setup_swde'])
+        setup_swde_dataset(pathlib.Path(args['setup_swde']))
+        log.info('Setup of SWDE dataset done.')
 
-    main()
+    if args['restruc_swde']:
+        should_exit = True
+        log.info('Restructure the SWDE dataset.')
+        restructure_swde()
+        log.info('SWDE dataset restructured.')
+
+    if args['compress_re_swde']:
+        should_exit = True
+        log.info('Compress the restructured SWDE dateset.')
+        compress_restruc_swde()
+        log.info('Compressed restructured dataset to ZIP file %s',
+                 Config.get().data_dir.joinpath('Restruc_SWDE_Dataset.zip'))
+
+    if args['extract_re_swde']:
+        should_exit = True
+        log.info('Extract the restructured SWDE dataset from ZIP file %s', args['extract_re_swde'])
+        extract_restruc_swde(pathlib.Path(args['extract_re_swde']))
+        log.info('Extracted restructured SWDE dataset.')
+
+    if not should_exit:
+        main()
 
 
 def main():
@@ -131,7 +147,7 @@ def main():
     # Train and extract from a StrucTempExtractionModel
     struc_temp_model = StrucTempExtractionModel(Category.NBA_PLAYER, 'struc_model_1')
     struc_temp_model.train(web_ids)
-    result = struc_temp_model.extract(web_ids, k=3, n_jobs=-2)
+    result = struc_temp_model.extract(web_ids, k=3)
 
     # Train and extract from a Spacy NeuralNetCategoryModel
     ner_spacy = NeuralNetExtractionModel(Category.NBA_PLAYER, 'ner_model_1', 'NerV1')

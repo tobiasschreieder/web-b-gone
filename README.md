@@ -15,16 +15,18 @@ The program needs three directories to work correctly:
 It's possible to set the directories in the config.json, if so the ``config.json - PATH`` has to be the
 parameter after ``-cfg``.
 
+
+### Dataset
+The dataset can be downloaded [here](https://academictorrents.com/details/411576c7e80787e4b40452360f5f24acba9b5159). 
+In order to use the dataset for this project, it first needs to be refactored. 
+To achieve this start the program with the parameters ``-swde path/to/SWDE.zip -reswde``. 
+If you want to compress the restructured SWDE dataset use the parameter ``-cswde``. 
+For extraction of the compressed restructured SWDE dataset use ```-e path/to/restruc_SWDE.zip```
+
+
 ## Usage
 In the main method of startup.py some example calls of the main functionalities of this project, like model training, 
 evaluation, etc. are given. These are for illustration purposes and can be adjusted as desired.
-
-## Dataset
-The dataset can be downloaded [here](https://academictorrents.com/details/411576c7e80787e4b40452360f5f24acba9b5159). 
-In order to use the dataset for this project, it first needs to be refactored. Please use the following methods in the 
-same order from classification.preprocessing.swde_setup:
- - setup_swde_dataset(zip_path: Path)
- - swde_setup.restructure_swde()
 
 ## Models 
 All trained and evaluated models are stored in the GIT as working.zip. To use them, they can be extracted and moved to 
