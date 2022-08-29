@@ -69,6 +69,8 @@ def evaluate_classification(model_cls_classification: Type[BaseCategoryModel],
     if save_results:
         parameters = {"Model": model_cls_classification, "Data-split": split_type,
                       "Size dataset": max_size, "Train-Test-Split": train_test_split, "Averaging method": AVERAGE}
+        for k, v in model_kwargs.items():
+            parameters.setdefault(str(k).capitalize(), str(v))
 
         create_md_file(results=results, parameters=parameters, path=path)
 
